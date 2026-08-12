@@ -32,3 +32,26 @@
 - [x] Make per-card AI retry target the intended card deterministically
 - [x] Restore the saved sequence name when reopening from the dashboard
 - [x] Add Vitest tests for authenticated story save/list procedures
+
+## User-requested update
+
+- [x] Remove all seeded demo story cards and demo image data from the initial editor state
+- [x] Make the empty state upload-only with an explicit Create stories action
+- [x] Require a product or story goal brief before AI story copy generation
+- [x] Pass the goal brief into AI generation so copy supports outcomes such as booking calls or getting sales
+- [x] Update tests and verify the goal-first creation flow
+
+## Final verification follow-up
+
+- [x] Disable or guard Save and Export until at least one photo exists
+- [x] Verify the upload, goal brief, and Create stories interaction end to end
+- [x] Add regression coverage for empty-state save/export restrictions
+
+## Goal-flow verification
+
+- [x] Add component-level or equivalent flow coverage for upload photos, entering a goal, creating stories, and receiving generated card copy
+
+## Production-path verification
+
+- [x] Refactor the live Create stories handler to use the tested creation-flow helper
+- [x] Re-run checks and verify the production path before checkpointing

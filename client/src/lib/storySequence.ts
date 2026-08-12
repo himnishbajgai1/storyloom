@@ -16,6 +16,16 @@ export function sequenceSnapshot(name: string, cards: unknown[]) {
   return { name: name.trim() || "Untitled sequence", cards, cardCount: cards.length };
 }
 
+export function canUseSequenceActions(cardCount: number) {
+  return cardCount > 0;
+}
+
+export async function createStoryCards<T extends StoryCardLike>(cards: T[], goal: string, generateOne: (card: T, goal: string) => Promise<Partial<T>>): Promise<T[]> {
+  if (!goal.trim()) throw new Error("A story goal is required");
+  if (!cards.length) throw new Error("At least one photo is required");
+  return Promise.all(cards.map(async card => ({ ...card, ...(await generateOne(card, goal)) })));
+}
+
 export function exportFilename(name: string, extension = "png") {
   const safe = name.trim().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "story-card";
   return `${safe}.${extension}`;

@@ -11,6 +11,11 @@ const ctx = {
 describe("story.generateCopy", () => {
   it("rejects empty image payloads before calling the model", async () => {
     const caller = appRouter.createCaller(ctx);
-    await expect(caller.story.generateCopy({ imageDataUrl: "", tone: "warm", cardNumber: 1 })).rejects.toThrow();
+    await expect(caller.story.generateCopy({ imageDataUrl: "", tone: "warm", goal: "book calls", cardNumber: 1 })).rejects.toThrow();
+  });
+
+  it("requires a product or story goal before calling the model", async () => {
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.story.generateCopy({ imageDataUrl: "data:image/jpeg;base64,abc", tone: "warm", goal: "", cardNumber: 1 })).rejects.toThrow();
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { exportFilename, moveCard, sequenceSnapshot, updateCard } from "../client/src/lib/storySequence";
+import { canUseSequenceActions, createStoryCards, exportFilename, moveCard, sequenceSnapshot, updateCard } from "../client/src/lib/storySequence";
 
 describe("story sequence utilities", () => {
   const cards = [{ id: "a", headline: "A" }, { id: "b", headline: "B" }, { id: "c", headline: "C" }];
@@ -26,5 +26,17 @@ describe("story sequence utilities", () => {
   it("creates safe filenames for individual card exports", () => {
     expect(exportFilename(" Morning / notes ")).toBe("morning-notes.png");
     expect(exportFilename("", "jpg")).toBe("story-card.jpg");
+  });
+
+  it("keeps save and export unavailable until photos exist", () => {
+    expect(canUseSequenceActions(0)).toBe(false);
+    expect(canUseSequenceActions(1)).toBe(true);
+  });
+
+  it("creates generated copy for uploaded cards only when a goal is supplied", async () => {
+    const uploaded = [{ id: "photo-1", headline: "Add your story goal" }];
+    const generated = await createStoryCards(uploaded, "book more calls", async (card, goal) => ({ headline: `${goal}: ${card.id}` }));
+    expect(generated[0]?.headline).toBe("book more calls: photo-1");
+    await expect(createStoryCards(uploaded, "", async () => ({ headline: "should not run" }))).rejects.toThrow("story goal");
   });
 });
