@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canUseSequenceActions, createStoryCards, exportFilename, exportStyleConfig, moveCard, sequenceSnapshot, updateCard, visualStyleSnapshot } from "../client/src/lib/storySequence";
+import { canUseSequenceActions, copyableCardStyle, createStoryCards, exportFilename, exportMetadata, exportRenderPlan, exportStyleConfig, fitTextScale, moveCard, safePanelLayout, sequenceSnapshot, updateCard, visualStyleSnapshot } from "../client/src/lib/storySequence";
 
 describe("story sequence utilities", () => {
   const cards = [{ id: "a", headline: "A" }, { id: "b", headline: "B" }, { id: "c", headline: "C" }];
@@ -21,6 +21,23 @@ describe("story sequence utilities", () => {
   it("normalizes untitled sequence names and preserves card count", () => {
     expect(sequenceSnapshot("  ", cards)).toMatchObject({ name: "Untitled sequence", cardCount: 3 });
     expect(sequenceSnapshot(" Summer notes ", cards).name).toBe("Summer notes");
+  });
+
+  it("copies visual style settings without copying image or text content", () => {
+    const style = copyableCardStyle({ image: "photo.jpg", headline: "Private headline", textTreatment: "blur", textScale: 44, panelPaddingX: 26, panelOffsetY: -12 });
+    expect(style).toEqual({ textTreatment: "blur", textScale: 44, panelPaddingX: 26, panelOffsetY: -12 });
+  });
+
+  it("scales down long copy and exports without a watermark", () => {
+    expect(fitTextScale({ baseScale: 58, headline: "A very long headline that needs to fit safely inside a story panel", caption: "A longer supporting caption that should remain readable without covering the image." })).toBeLessThan(58);
+    expect(exportMetadata()).toEqual({ watermark: false, canvas: "1080x1920", safeZones: true });
+    expect(exportRenderPlan()).toEqual({ canvas: "1080x1920", drawWatermark: false, respectSafeZones: true });
+  });
+
+  it("keeps exported panels inside the story safe area", () => {
+    const panel = safePanelLayout({ canvasWidth: 1080, canvasHeight: 1920, panelWidth: 84, panelHeight: 900, offsetX: 8, offsetY: 40, placement: "bottom" });
+    expect(panel.y).toBeGreaterThanOrEqual(172.8);
+    expect(panel.y + panel.height).toBeLessThanOrEqual(1747.2);
   });
 
   it("creates safe filenames for individual card exports", () => {
@@ -45,6 +62,6 @@ describe("story sequence utilities", () => {
   });
 
   it("builds the exact export style configuration used by the canvas renderer", () => {
-    expect(exportStyleConfig({ textTreatment: "blur", textColor: "#f8e7c9", gradientStart: "#18231f", gradientEnd: "#8da28f", gradientAngle: 270, overlayOpacity: 70, textSize: "large", textAlign: "center", radius: "round", panelPaddingX: 28, panelPaddingY: 22, glassOpacity: 40, blurStrength: 24, borderOpacity: 35, shadowStrength: 30, lineHeight: 1.1, letterSpacing: -0.02, panelWidth: 76, panelOffsetX: 4, panelOffsetY: -10 })).toEqual({ treatment: "blur", textColor: "#f8e7c9", gradient: { start: "#18231f", end: "#8da28f", angle: 270 }, overlayAlpha: 0.7, align: "center", radius: "round", headlineScale: 1.18, paddingX: 28, paddingY: 22, glassOpacity: 40, blurStrength: 24, borderOpacity: 35, shadowStrength: 30, lineHeight: 1.1, letterSpacing: -0.02, panelWidth: 76, offsetX: 4, offsetY: -10 });
+    expect(exportStyleConfig({ textTreatment: "blur", textColor: "#f8e7c9", gradientStart: "#18231f", gradientEnd: "#8da28f", gradientAngle: 270, overlayOpacity: 70, textSize: "large", textAlign: "center", radius: "round", panelPaddingX: 28, panelPaddingY: 22, glassOpacity: 40, blurStrength: 24, borderOpacity: 35, shadowStrength: 30, lineHeight: 1.1, letterSpacing: -0.02, panelWidth: 76, panelOffsetX: 4, panelOffsetY: -10 })).toEqual({ treatment: "blur", textColor: "#f8e7c9", gradient: { start: "#18231f", end: "#8da28f", angle: 270 }, overlayAlpha: 0.7, align: "center", radius: "round", headlineScale: 1.18, textScale: 72, paddingX: 28, paddingY: 22, glassOpacity: 40, blurStrength: 24, borderOpacity: 35, shadowStrength: 30, lineHeight: 1.1, letterSpacing: -0.02, panelWidth: 76, offsetX: 4, offsetY: -10 });
   });
 });

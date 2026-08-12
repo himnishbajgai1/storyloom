@@ -26,7 +26,7 @@ export async function createStoryCards<T extends StoryCardLike>(cards: T[], goal
   return Promise.all(cards.map(async card => ({ ...card, ...(await generateOne(card, goal)) })));
 }
 
-export function visualStyleSnapshot(style: { textTreatment: string; textColor: string; gradientStart: string; gradientEnd: string; gradientAngle: number; overlayOpacity: number; textSize: string; textAlign: string; radius: string; panelPaddingX?: number; panelPaddingY?: number; glassOpacity?: number; blurStrength?: number; borderOpacity?: number; shadowStrength?: number; lineHeight?: number; letterSpacing?: number; panelWidth?: number; panelOffsetX?: number; panelOffsetY?: number }) {
+export function visualStyleSnapshot(style: { textTreatment: string; textColor: string; gradientStart: string; gradientEnd: string; gradientAngle: number; overlayOpacity: number; textSize: string; textAlign: string; radius: string; textScale?: number; panelPaddingX?: number; panelPaddingY?: number; glassOpacity?: number; blurStrength?: number; borderOpacity?: number; shadowStrength?: number; lineHeight?: number; letterSpacing?: number; panelWidth?: number; panelOffsetX?: number; panelOffsetY?: number }) {
   return {
     textTreatment: style.textTreatment,
     textColor: style.textColor,
@@ -51,7 +51,45 @@ export function visualStyleSnapshot(style: { textTreatment: string; textColor: s
 
 export function exportStyleConfig(style: Parameters<typeof visualStyleSnapshot>[0]) {
   const visual = visualStyleSnapshot(style);
-  return { treatment: visual.textTreatment, textColor: visual.textColor, gradient: visual.gradient, overlayAlpha: visual.overlayOpacity / 100, align: visual.textAlign, radius: visual.radius, headlineScale: visual.textSize === "large" ? 1.18 : visual.textSize === "small" ? 0.8 : 1, paddingX: visual.panelPaddingX, paddingY: visual.panelPaddingY, glassOpacity: visual.glassOpacity, blurStrength: visual.blurStrength, borderOpacity: visual.borderOpacity, shadowStrength: visual.shadowStrength, lineHeight: visual.lineHeight, letterSpacing: visual.letterSpacing, panelWidth: visual.panelWidth, offsetX: visual.panelOffsetX, offsetY: visual.panelOffsetY };
+  return { treatment: visual.textTreatment, textColor: visual.textColor, gradient: visual.gradient, overlayAlpha: visual.overlayOpacity / 100, align: visual.textAlign, radius: visual.radius, headlineScale: visual.textSize === "large" ? 1.18 : visual.textSize === "small" ? 0.8 : 1, textScale: style.textScale ?? (visual.textSize === "large" ? 72 : visual.textSize === "small" ? 44 : 58), paddingX: visual.panelPaddingX, paddingY: visual.panelPaddingY, glassOpacity: visual.glassOpacity, blurStrength: visual.blurStrength, borderOpacity: visual.borderOpacity, shadowStrength: visual.shadowStrength, lineHeight: visual.lineHeight, letterSpacing: visual.letterSpacing, panelWidth: visual.panelWidth, offsetX: visual.panelOffsetX, offsetY: visual.panelOffsetY };
+}
+
+export function fitTextScale(input: { baseScale: number; headline: string; caption: string }) {
+  const headlineFactor = Math.min(1, 260 / Math.max(260, input.headline.length * 9));
+  const captionFactor = Math.min(1, 420 / Math.max(420, input.caption.length * 4.2));
+  return Math.max(28, Math.round(input.baseScale * Math.min(headlineFactor, captionFactor)));
+}
+
+export function fitCaptionScale(input: { baseScale: number; caption: string }) {
+  return Math.max(18, Math.round(input.baseScale * Math.min(1, 420 / Math.max(420, input.caption.length * 4.2))));
+}
+
+export function estimateTextLines(text: string, charactersPerLine: number) {
+  return Math.max(1, Math.ceil(text.trim().length / Math.max(1, charactersPerLine)));
+}
+
+export function safePanelLayout(input: { canvasWidth: number; canvasHeight: number; panelWidth: number; panelHeight: number; offsetX: number; offsetY: number; placement: "top" | "center" | "bottom" }) {
+  const width = input.canvasWidth * Math.max(0.55, Math.min(1, input.panelWidth / 100));
+  const safeTop = input.canvasHeight * 0.09;
+  const safeBottom = input.canvasHeight * 0.91;
+  const preferredY = input.placement === "top" ? input.canvasHeight * 0.18 : input.placement === "center" ? input.canvasHeight * 0.5 - input.panelHeight / 2 : input.canvasHeight * 0.68;
+  const x = (input.canvasWidth - width) / 2 + input.offsetX * 8;
+  const y = Math.max(safeTop, Math.min(preferredY + input.offsetY * 4, safeBottom - input.panelHeight));
+  return { x, y, width, height: input.panelHeight };
+}
+
+export function exportMetadata() {
+  return { watermark: false, canvas: "1080x1920", safeZones: true } as const;
+}
+
+export function exportRenderPlan() {
+  const metadata = exportMetadata();
+  return { canvas: metadata.canvas, drawWatermark: metadata.watermark, respectSafeZones: metadata.safeZones } as const;
+}
+
+export function copyableCardStyle(card: Record<string, unknown>) {
+  const keys = ["placement", "style", "textTreatment", "textColor", "gradientStart", "gradientEnd", "gradientAngle", "overlayOpacity", "textSize", "textScale", "textAlign", "radius", "panelPaddingX", "panelPaddingY", "glassOpacity", "blurStrength", "borderOpacity", "shadowStrength", "lineHeight", "letterSpacing", "panelWidth", "panelOffsetX", "panelOffsetY", "safeZone"];
+  return Object.fromEntries(keys.filter(key => key in card).map(key => [key, card[key]]));
 }
 
 export function exportFilename(name: string, extension = "png") {

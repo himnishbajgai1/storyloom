@@ -100,3 +100,34 @@
 - [x] Apply letter spacing in canvas export rendering
 - [x] Add a supported blur-strength approximation to canvas export rendering
 - [x] Re-run checks after the final glass fidelity fixes
+
+## Client-ready story workflow upgrade
+
+- [x] Make card text fit safely inside the story frame with smaller defaults and overflow-aware layout
+- [x] Add explicit text size control that affects preview and export
+- [x] Remove the Storyloom watermark from exported images
+- [x] Add Copy style and Paste style actions for reusing a card design across photos
+- [x] Add safer image framing controls so text does not cover the main subject
+- [x] Research current story-sequence and designer workflow needs and select only focused client-useful features
+- [x] Add selected client-ready design features from the research
+- [x] Add tests for fit-to-frame, watermark-free export, and style-copy behavior
+- [x] Verify export files and card composition on desktop and mobile
+
+## Final client export verification
+
+- [x] Add content-length-aware text fitting for long headlines and captions in preview and export
+- [x] Add image focal-point and zoom controls for subject-safe framing
+- [x] Add a direct test proving export configuration contains no watermark layer
+- [x] Perform an actual exported-card verification pass, not only editor screenshots
+
+## Final export fidelity follow-up
+
+- [x] Fit caption text independently and size the export panel from wrapped headline and caption content
+- [x] Apply image focal point and zoom to the canvas export crop
+- [x] Make the renderer-level watermark omission explicit and testable
+- [x] Verify a generated export output through the live app flow
+
+## Final evidence pass
+
+- [x] Add a renderer-level export drawing contract that proves watermark drawing is disabled in production configuration
+- [x] Inspect the actual downloaded PNG to confirm framing, text fit, and watermark-free output
