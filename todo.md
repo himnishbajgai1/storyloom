@@ -131,3 +131,43 @@
 
 - [x] Add a renderer-level export drawing contract that proves watermark drawing is disabled in production configuration
 - [x] Inspect the actual downloaded PNG to confirm framing, text fit, and watermark-free output
+
+## Export, typography, and editing layout fixes
+
+- [x] Make canvas export typography and positioning match the live card preview
+- [x] Add additional font choices for headlines and captions
+- [x] Add text-only glass and text-only glass-blur treatments that do not cover the entire background
+- [x] Keep the active card preview visible while editing controls lower in the workspace
+- [x] Improve editor spacing and mobile control usability
+- [x] Add tests for export layout parity, font serialization, and text-only glass treatment
+- [x] Verify a real download and the editing experience on desktop and mobile
+
+## Final parity and text-glass verification
+
+- [x] Align exported panel placement with the live preview’s top, center, and bottom geometry
+- [x] Make text-only glass and blur skip the panel background, backdrop blur, border, and shadow in preview and export
+- [x] Add tests for live/export layout parity and production text-only glass export behavior
+- [x] Run a fresh real export after the final renderer fixes and inspect the downloaded image
+
+## Renderer contract and evidence pass
+
+- [x] Extract the production export render plan into a shared helper that includes anchor and panel-drawing behavior
+- [x] Use the shared render plan inside the live canvas export path
+- [x] Add direct tests for bottom/center/top export placement and text-only glass panel omission
+- [x] Save explicit visual findings for the freshly opened PNG export
+
+## Final render-plan closure
+
+- [x] Drive canvas placement directly from exportCardRenderPlan.anchor
+- [x] Cover top, center, and bottom exportCardRenderPlan cases
+- [x] Add deterministic final export assertions for text fit, safe placement, and no watermark drawing
+- [x] Record visual inspection details tied to the freshly opened PNG screenshot
+
+## Final renderer evidence
+
+- [x] Add a pure export-card render contract that asserts fitted headline/caption scales, safe panel bounds, and watermark-disabled output together
+- [x] Save a screenshot-specific visual verification record for the latest downloaded PNG
+
+## Screenshot evidence closure
+
+- [x] Update export-verification.md with screenshot-specific findings for the final opened PNG

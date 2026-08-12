@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canUseSequenceActions, copyableCardStyle, createStoryCards, exportFilename, exportMetadata, exportRenderPlan, exportStyleConfig, fitTextScale, moveCard, safePanelLayout, sequenceSnapshot, updateCard, visualStyleSnapshot } from "../client/src/lib/storySequence";
+import { canUseSequenceActions, copyableCardStyle, createStoryCards, exportCardConfig, exportCardRenderPlan, exportFilename, exportMetadata, exportRenderPlan, exportStyleConfig, fitTextScale, moveCard, safePanelLayout, shouldDrawTextPanel, storyPanelAnchor, sequenceSnapshot, updateCard, visualStyleSnapshot } from "../client/src/lib/storySequence";
 
 describe("story sequence utilities", () => {
   const cards = [{ id: "a", headline: "A" }, { id: "b", headline: "B" }, { id: "c", headline: "C" }];
@@ -24,8 +24,8 @@ describe("story sequence utilities", () => {
   });
 
   it("copies visual style settings without copying image or text content", () => {
-    const style = copyableCardStyle({ image: "photo.jpg", headline: "Private headline", textTreatment: "blur", textScale: 44, panelPaddingX: 26, panelOffsetY: -12 });
-    expect(style).toEqual({ textTreatment: "blur", textScale: 44, panelPaddingX: 26, panelOffsetY: -12 });
+    const style = copyableCardStyle({ image: "photo.jpg", headline: "Private headline", fontFamily: "rounded", textEffect: "glassText", textTreatment: "blur", textScale: 44, panelPaddingX: 26, panelOffsetY: -12 });
+    expect(style).toEqual({ fontFamily: "rounded", textEffect: "glassText", textTreatment: "blur", textScale: 44, panelPaddingX: 26, panelOffsetY: -12 });
   });
 
   it("scales down long copy and exports without a watermark", () => {
@@ -34,8 +34,33 @@ describe("story sequence utilities", () => {
     expect(exportRenderPlan()).toEqual({ canvas: "1080x1920", drawWatermark: false, respectSafeZones: true });
   });
 
+  it("keeps live and exported panel anchors aligned", () => {
+    expect(storyPanelAnchor("top")).toEqual({ top: 0.06, bottom: null });
+    expect(storyPanelAnchor("center")).toEqual({ top: 0.5, bottom: null });
+    expect(storyPanelAnchor("bottom")).toEqual({ top: null, bottom: 0.07 });
+  });
+
+  it("skips the panel renderer for text-only glass effects", () => {
+    expect(shouldDrawTextPanel({ treatment: "glass", textEffect: "solid" })).toBe(true);
+    expect(shouldDrawTextPanel({ treatment: "glass", textEffect: "glassText" })).toBe(false);
+    expect(shouldDrawTextPanel({ treatment: "blur", textEffect: "blurText" })).toBe(false);
+    expect(exportCardRenderPlan({ placement: "top", textTreatment: "glass", textEffect: "solid" })).toEqual({ anchor: { top: 0.06, bottom: null }, drawPanel: true });
+    expect(exportCardRenderPlan({ placement: "center", textTreatment: "glass", textEffect: "solid" })).toEqual({ anchor: { top: 0.5, bottom: null }, drawPanel: true });
+    expect(exportCardRenderPlan({ placement: "bottom", textTreatment: "glass", textEffect: "glassText" })).toEqual({ anchor: { top: null, bottom: 0.07 }, drawPanel: false });
+  });
+
+  it("builds a safe, fitted, watermark-free production export config", () => {
+    const config = exportCardConfig({ headline: "A very long headline that should be reduced to fit the 9:16 card", caption: "A longer caption that needs independent fitting so it stays readable and inside the safe panel.", placement: "bottom", textTreatment: "glass", textEffect: "glassText", textScale: 58, textSize: "medium", textAlign: "left", radius: "soft", gradientStart: "#18231f", gradientEnd: "#8da28f", gradientAngle: 135, textColor: "#ffffff", overlayOpacity: 70, panelPaddingX: 16, panelPaddingY: 16, glassOpacity: 22, blurStrength: 18, borderOpacity: 28, shadowStrength: 22, lineHeight: 1, letterSpacing: -0.04, panelWidth: 84, panelOffsetX: 0, panelOffsetY: 0 } as any);
+    expect(config.headlineScale).toBeLessThan(58);
+    expect(config.captionScale).toBeLessThanOrEqual(30);
+    expect(config.panel.y).toBeGreaterThanOrEqual(172.8);
+    expect(config.panel.y + config.panel.height).toBeLessThanOrEqual(1747.2);
+    expect(config.drawPanel).toBe(false);
+    expect(config.watermark).toBe(false);
+  });
+
   it("keeps exported panels inside the story safe area", () => {
-    const panel = safePanelLayout({ canvasWidth: 1080, canvasHeight: 1920, panelWidth: 84, panelHeight: 900, offsetX: 8, offsetY: 40, placement: "bottom" });
+    const panel = safePanelLayout({ canvasWidth: 1080, canvasHeight: 1920, panelWidth: 84, panelHeight: 900, offsetX: 8, offsetY: 40, placement: "bottom", anchor: exportCardRenderPlan({ placement: "bottom", textTreatment: "glass", textEffect: "solid" }).anchor });
     expect(panel.y).toBeGreaterThanOrEqual(172.8);
     expect(panel.y + panel.height).toBeLessThanOrEqual(1747.2);
   });
@@ -58,10 +83,10 @@ describe("story sequence utilities", () => {
   });
 
   it("serializes visual styles with bounded gradient and opacity values", () => {
-    expect(visualStyleSnapshot({ textTreatment: "blur", textColor: "#fff", gradientStart: "#111111", gradientEnd: "#8da28f", gradientAngle: 480, overlayOpacity: 140, textSize: "large", textAlign: "center", radius: "round", panelPaddingX: 36, panelPaddingY: 32, glassOpacity: 60, blurStrength: 30, borderOpacity: 55, shadowStrength: 44, lineHeight: 1.25, letterSpacing: 0.02, panelWidth: 92, panelOffsetX: 6, panelOffsetY: -12 })).toMatchObject({ textTreatment: "blur", textColor: "#fff", gradient: { start: "#111111", end: "#8da28f", angle: 360 }, overlayOpacity: 100, textSize: "large", textAlign: "center", radius: "round", panelPaddingX: 36, panelPaddingY: 32, glassOpacity: 60, blurStrength: 30, borderOpacity: 55, shadowStrength: 44, lineHeight: 1.25, letterSpacing: 0.02, panelWidth: 92, panelOffsetX: 6, panelOffsetY: -12 });
+    expect(visualStyleSnapshot({ fontFamily: "mono", textEffect: "blurText", textTreatment: "blur", textColor: "#fff", gradientStart: "#111111", gradientEnd: "#8da28f", gradientAngle: 480, overlayOpacity: 140, textSize: "large", textAlign: "center", radius: "round", panelPaddingX: 36, panelPaddingY: 32, glassOpacity: 60, blurStrength: 30, borderOpacity: 55, shadowStrength: 44, lineHeight: 1.25, letterSpacing: 0.02, panelWidth: 92, panelOffsetX: 6, panelOffsetY: -12 })).toMatchObject({ fontFamily: "mono", textEffect: "blurText", textTreatment: "blur", textColor: "#fff", gradient: { start: "#111111", end: "#8da28f", angle: 360 }, overlayOpacity: 100, textSize: "large", textAlign: "center", radius: "round", panelPaddingX: 36, panelPaddingY: 32, glassOpacity: 60, blurStrength: 30, borderOpacity: 55, shadowStrength: 44, lineHeight: 1.25, letterSpacing: 0.02, panelWidth: 92, panelOffsetX: 6, panelOffsetY: -12 });
   });
 
   it("builds the exact export style configuration used by the canvas renderer", () => {
-    expect(exportStyleConfig({ textTreatment: "blur", textColor: "#f8e7c9", gradientStart: "#18231f", gradientEnd: "#8da28f", gradientAngle: 270, overlayOpacity: 70, textSize: "large", textAlign: "center", radius: "round", panelPaddingX: 28, panelPaddingY: 22, glassOpacity: 40, blurStrength: 24, borderOpacity: 35, shadowStrength: 30, lineHeight: 1.1, letterSpacing: -0.02, panelWidth: 76, panelOffsetX: 4, panelOffsetY: -10 })).toEqual({ treatment: "blur", textColor: "#f8e7c9", gradient: { start: "#18231f", end: "#8da28f", angle: 270 }, overlayAlpha: 0.7, align: "center", radius: "round", headlineScale: 1.18, textScale: 72, paddingX: 28, paddingY: 22, glassOpacity: 40, blurStrength: 24, borderOpacity: 35, shadowStrength: 30, lineHeight: 1.1, letterSpacing: -0.02, panelWidth: 76, offsetX: 4, offsetY: -10 });
+    expect(exportStyleConfig({ fontFamily: "mono", textEffect: "blurText", textTreatment: "plain", textColor: "#f8e7c9", gradientStart: "#18231f", gradientEnd: "#8da28f", gradientAngle: 270, overlayOpacity: 70, textSize: "large", textAlign: "center", radius: "round", panelPaddingX: 28, panelPaddingY: 22, glassOpacity: 40, blurStrength: 24, borderOpacity: 35, shadowStrength: 30, lineHeight: 1.1, letterSpacing: -0.02, panelWidth: 76, panelOffsetX: 4, panelOffsetY: -10 })).toEqual({ fontFamily: "mono", textEffect: "blurText", treatment: "plain", textColor: "#f8e7c9", gradient: { start: "#18231f", end: "#8da28f", angle: 270 }, overlayAlpha: 0.7, align: "center", radius: "round", headlineScale: 1.18, textScale: 72, paddingX: 28, paddingY: 22, glassOpacity: 40, blurStrength: 24, borderOpacity: 35, shadowStrength: 30, lineHeight: 1.1, letterSpacing: -0.02, panelWidth: 76, offsetX: 4, offsetY: -10 });
   });
 });
