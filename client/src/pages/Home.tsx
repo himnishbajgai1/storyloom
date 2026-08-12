@@ -4,29 +4,40 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { ArrowDown, ArrowUp, Check, Download, GripVertical, ImagePlus, Loader2, MoreHorizontal, Plus, Sparkles, Trash2, Upload, WandSparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "wouter";
-import { canUseSequenceActions, createStoryCards, exportFilename, moveCard, updateCard } from "@/lib/storySequence";
+import { canUseSequenceActions, createStoryCards, exportFilename, exportStyleConfig, moveCard, updateCard } from "@/lib/storySequence";
 
 type Placement = "top" | "center" | "bottom";
-type Card = { id: string; image: string; name: string; kicker: string; headline: string; caption: string; placement: Placement; style: "serif" | "sans"; aiStatus: "idle" | "generating" | "ready" | "error" };
+type TextTreatment = "plain" | "glass" | "blur";
+const presetTextColors = ["#ffffff", "#f8e7c9", "#dce8dc", "#18231f", "#252321", "#f0a08f"];
+type Card = { id: string; image: string; name: string; kicker: string; headline: string; caption: string; placement: Placement; style: "serif" | "sans"; textTreatment: TextTreatment; textColor: string; gradientStart: string; gradientEnd: string; gradientAngle: number; overlayOpacity: number; textSize: "small" | "medium" | "large"; textAlign: "left" | "center"; radius: "soft" | "round"; aiStatus: "idle" | "generating" | "ready" | "error" };
 
 type SavedSequence = { id: string; name: string; updatedAt: string; cards: Card[] };
 
 function makeCard(image: string, index: number, name = `Photo ${String(index + 1).padStart(2, "0")}`, aiStatus: Card["aiStatus"] = "idle"): Card {
-  return { id: `${Date.now()}-${index}-${Math.random()}`, image, name, kicker: "Your story", headline: "Add your story goal", caption: "Your AI-generated copy will appear here.", placement: index % 3 === 1 ? "center" : index % 3 === 2 ? "top" : "bottom", style: index % 2 ? "sans" : "serif", aiStatus };
+  return { id: `${Date.now()}-${index}-${Math.random()}`, image, name, kicker: "Your story", headline: "Add your story goal", caption: "Your AI-generated copy will appear here.", placement: index % 3 === 1 ? "center" : index % 3 === 2 ? "top" : "bottom", style: index % 2 ? "sans" : "serif", textTreatment: "glass", textColor: "#ffffff", gradientStart: "#18231f", gradientEnd: "#8da28f", gradientAngle: 180, overlayOpacity: 70, textSize: "medium", textAlign: "left", radius: "round", aiStatus };
+}
+
+function normalizeCard(card: Partial<Card>, index: number): Card {
+  return { ...makeCard(card.image ?? "", index, card.name ?? `Photo ${String(index + 1).padStart(2, "0")}`, card.aiStatus ?? "ready"), ...card, textTreatment: card.textTreatment ?? "glass", textColor: card.textColor ?? "#ffffff", gradientStart: card.gradientStart ?? "#18231f", gradientEnd: card.gradientEnd ?? "#8da28f", gradientAngle: card.gradientAngle ?? 180, overlayOpacity: card.overlayOpacity ?? 70, textSize: card.textSize ?? "medium", textAlign: card.textAlign ?? "left", radius: card.radius ?? "round" } as Card;
 }
 
 function loadSaved(): SavedSequence[] {
-  try { return JSON.parse(localStorage.getItem("storyloom-sequences") ?? "[]"); } catch { return []; }
+  try { return (JSON.parse(localStorage.getItem("storyloom-sequences") ?? "[]") as SavedSequence[]).map(item => ({ ...item, cards: item.cards.map(normalizeCard) })); } catch { return []; }
 }
 
 function StoryCard({ card, active, onClick }: { card: Card; active: boolean; onClick: () => void }) {
-  return <button onClick={onClick} className={`group relative aspect-[9/16] w-full overflow-hidden rounded-[1.25rem] text-left story-shadow ${active ? "ring-2 ring-[#8da28f] ring-offset-4 ring-offset-[#f5f4ef]" : ""}`}>
+  const radius = card.radius === "round" ? "rounded-[1.5rem]" : "rounded-[.8rem]";
+  const panel = card.textTreatment === "plain" ? "" : card.textTreatment === "blur" ? "bg-black/20 backdrop-blur-xl border border-white/20 shadow-2xl" : "bg-white/10 backdrop-blur-md border border-white/25 shadow-xl";
+  const size = card.textSize === "large" ? "text-[2rem]" : card.textSize === "small" ? "text-[1.35rem]" : "text-[1.65rem]";
+  return <button onClick={onClick} style={{ borderRadius: card.radius === "round" ? "1.5rem" : ".8rem" }} className={`group relative aspect-[9/16] w-full overflow-hidden text-left story-shadow ${active ? "ring-2 ring-[#8da28f] ring-offset-4 ring-offset-[#f5f4ef]" : ""}`}>
     <img src={card.image} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
-    <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/5 to-black/75" />
-    <div className={`absolute inset-x-5 ${card.placement === "top" ? "top-6" : card.placement === "center" ? "top-1/2 -translate-y-1/2" : "bottom-7"} text-white`}>
-      <p className="eyebrow mb-2 text-white/70">{card.kicker}</p>
-      <h3 className={`max-w-[14rem] text-[1.65rem] leading-[.98] tracking-[-.04em] ${card.style === "serif" ? "font-display" : "font-semibold"}`}>{card.headline}</h3>
-      <p className="mt-3 max-w-[13rem] text-[.7rem] leading-[1.35] text-white/80">{card.caption}</p>
+    <div className="absolute inset-0" style={{ background: `linear-gradient(${card.gradientAngle}deg, ${card.gradientStart}${Math.round(card.overlayOpacity * 0.8).toString(16).padStart(2, "0")}, ${card.gradientEnd}${Math.round(card.overlayOpacity * 0.95).toString(16).padStart(2, "0")})` }} />
+    <div className={`absolute inset-x-4 ${card.placement === "top" ? "top-6" : card.placement === "center" ? "top-1/2 -translate-y-1/2" : "bottom-7"}`}>
+      <div className={`${panel} ${radius} p-4`} style={{ color: card.textColor, textAlign: card.textAlign }}>
+        <p className="eyebrow mb-2 opacity-75">{card.kicker}</p>
+        <h3 className={`max-w-[14rem] ${size} leading-[.98] tracking-[-.04em] ${card.style === "serif" ? "font-display" : "font-semibold"}`}>{card.headline}</h3>
+        <p className="mt-3 max-w-[13rem] text-[.7rem] leading-[1.35] opacity-80">{card.caption}</p>
+      </div>
     </div>
     <span className="absolute left-4 top-4 font-mono text-[.62rem] text-white/65">STORYLOOM</span>
     {card.aiStatus === "generating" && <span className="absolute right-4 top-4 rounded-full bg-white/90 px-2 py-1 font-mono text-[.55rem] text-[#203529]">AI writing…</span>}
@@ -38,7 +49,7 @@ function StoryCard({ card, active, onClick }: { card: Card; active: boolean; onC
 export default function Home() {
   const [cards, setCards] = useState<Card[]>(() => {
     const reopened = localStorage.getItem("storyloom-open-sequence");
-    if (reopened) { localStorage.removeItem("storyloom-open-sequence"); try { const parsed = JSON.parse(reopened) as { cards?: Card[]; name?: string } | Card[]; return Array.isArray(parsed) ? parsed : parsed.cards ?? []; } catch { /* fall through */ } }
+    if (reopened) { localStorage.removeItem("storyloom-open-sequence"); try { const parsed = JSON.parse(reopened) as { cards?: Card[]; name?: string } | Card[]; return (Array.isArray(parsed) ? parsed : parsed.cards ?? []).map(normalizeCard); } catch { /* fall through */ } }
     return [];
   });
   const [reopenedName] = useState(() => { try { const raw = localStorage.getItem("storyloom-open-sequence-name"); if (raw) { localStorage.removeItem("storyloom-open-sequence-name"); return raw; } } catch {} return "Untitled story sequence"; });
@@ -153,13 +164,18 @@ export default function Home() {
     await new Promise(resolve => { image.onload = resolve; image.onerror = resolve; });
     const canvas = document.createElement("canvas"); canvas.width = 1080; canvas.height = 1920;
     const ctx = canvas.getContext("2d"); if (!ctx) return;
+    const visual = exportStyleConfig(card);
     const scale = Math.max(canvas.width / image.width, canvas.height / image.height); const w = image.width * scale; const h = image.height * scale;
     ctx.drawImage(image, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
-    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height); gradient.addColorStop(0, "rgba(0,0,0,.05)"); gradient.addColorStop(1, "rgba(0,0,0,.78)"); ctx.fillStyle = gradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "white"; ctx.font = "500 28px monospace"; ctx.fillText("STORYLOOM", 86, 108);
+    const gradient = ctx.createLinearGradient(0, 0, Math.cos(visual.gradient.angle * Math.PI / 180) * canvas.width, Math.sin(visual.gradient.angle * Math.PI / 180) * canvas.height);
+    gradient.addColorStop(0, hexToRgba(visual.gradient.start, visual.overlayAlpha)); gradient.addColorStop(1, hexToRgba(visual.gradient.end, Math.min(1, visual.overlayAlpha + .18))); ctx.fillStyle = gradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "rgba(255,255,255,.72)"; ctx.font = "500 28px monospace"; ctx.fillText("STORYLOOM", 86, 108);
     const y = card.placement === "top" ? 340 : card.placement === "center" ? 970 : 1490;
-    ctx.font = card.style === "serif" ? "600 92px Georgia" : "600 86px Arial"; wrapText(ctx, card.headline, 86, y, 890, 102);
-    ctx.font = "400 34px Arial"; wrapText(ctx, card.caption, 86, y + 170, 820, 48);
+    const panelX = card.textAlign === "center" ? 80 : 64; const panelW = 936; const panelH = 360; const panelY = y - 110;
+    if (visual.treatment !== "plain") { ctx.fillStyle = visual.treatment === "blur" ? "rgba(0,0,0,.32)" : "rgba(255,255,255,.12)"; drawRoundedRect(ctx, panelX, panelY, panelW, panelH, visual.radius === "round" ? 42 : 20); ctx.fill(); ctx.strokeStyle = "rgba(255,255,255,.25)"; ctx.stroke(); }
+    ctx.fillStyle = visual.textColor; ctx.textAlign = visual.align as CanvasTextAlign; const textX = visual.align === "center" ? canvas.width / 2 : 86; const headlineSize = 88 * visual.headlineScale;
+    ctx.font = card.style === "serif" ? `600 ${headlineSize}px Georgia` : `600 ${headlineSize - 4}px Arial`; wrapText(ctx, card.headline, textX, y, 860, headlineSize + 10, visual.align as CanvasTextAlign);
+    ctx.font = "400 34px Arial"; wrapText(ctx, card.caption, textX, y + 170, 820, 48, visual.align as CanvasTextAlign);
     const link = document.createElement("a"); link.download = exportFilename(card.name || "story-card"); link.href = canvas.toDataURL("image/png"); link.click();
   };
 
@@ -190,20 +206,33 @@ export default function Home() {
             <label className="block"><span className="eyebrow text-[#77736c]">Caption</span><textarea rows={3} value={active.caption} onChange={e => updateActive({ caption: e.target.value })} className="mt-2 w-full resize-none rounded-xl border border-black/10 bg-[#f5f4ef] p-3 text-sm leading-relaxed outline-none focus:border-[#8da28f]" /></label>
             <div><span className="eyebrow text-[#77736c]">Text placement</span><div className="mt-2 grid grid-cols-3 gap-2">{(["top", "center", "bottom"] as Placement[]).map(item => <button key={item} onClick={() => updateActive({ placement: item })} className={`rounded-xl border px-2 py-2 text-xs capitalize ${active.placement === item ? "border-[#8da28f] bg-[#eaf1e8] text-[#203529]" : "border-black/10 hover:bg-[#f5f4ef]"}`}>{item}</button>)}</div></div>
             <div><span className="eyebrow text-[#77736c]">Headline style</span><div className="mt-2 grid grid-cols-2 gap-2"><button onClick={() => updateActive({ style: "serif" })} className={`rounded-xl border px-3 py-2 text-left font-display text-lg ${active.style === "serif" ? "border-[#8da28f] bg-[#eaf1e8]" : "border-black/10"}`}>Editorial</button><button onClick={() => updateActive({ style: "sans" })} className={`rounded-xl border px-3 py-2 text-left text-sm font-semibold ${active.style === "sans" ? "border-[#8da28f] bg-[#eaf1e8]" : "border-black/10"}`}>Modern</button></div></div>
+            <div><span className="eyebrow text-[#77736c]">Text treatment</span><div className="mt-2 grid grid-cols-3 gap-2">{(["plain", "glass", "blur"] as TextTreatment[]).map(item => <button key={item} onClick={() => updateActive({ textTreatment: item })} className={`rounded-xl border px-2 py-2 text-xs capitalize ${active.textTreatment === item ? "border-[#8da28f] bg-[#eaf1e8] text-[#203529]" : "border-black/10 hover:bg-[#f5f4ef]"}`}>{item === "blur" ? "Blur glass" : item}</button>)}</div></div>
+            <div className="grid grid-cols-2 gap-3"><label className="block"><span className="eyebrow text-[#77736c]">Text color</span><div className="mt-2 flex flex-wrap gap-1.5">{presetTextColors.map(color => <button key={color} onClick={() => updateActive({ textColor: color })} aria-label={`Use ${color} text`} className={`h-7 w-7 rounded-full border-2 ${active.textColor === color ? "border-[#819686] ring-2 ring-[#dce8dc]" : "border-white"}`} style={{ backgroundColor: color }} />)}<span className="flex items-center gap-2 rounded-lg border border-black/10 bg-[#f5f4ef] px-2"><input type="color" value={active.textColor} onChange={e => updateActive({ textColor: e.target.value })} className="h-6 w-6 cursor-pointer rounded-lg border-0 bg-transparent p-0" /><span className="font-mono text-[.58rem] uppercase text-[#77736c]">Custom</span></span></div></label><label className="block"><span className="eyebrow text-[#77736c]">Radius</span><div className="mt-2 grid grid-cols-2 gap-1"><button onClick={() => updateActive({ radius: "soft" })} className={`rounded-lg border px-2 py-2 text-[.65rem] ${active.radius === "soft" ? "border-[#8da28f] bg-[#eaf1e8]" : "border-black/10"}`}>Soft</button><button onClick={() => updateActive({ radius: "round" })} className={`rounded-lg border px-2 py-2 text-[.65rem] ${active.radius === "round" ? "border-[#8da28f] bg-[#eaf1e8]" : "border-black/10"}`}>Round</button></div></label></div>
+            <div><div className="flex items-center justify-between"><span className="eyebrow text-[#77736c]">Gradient overlay</span><span className="font-mono text-[.62rem] text-[#938e85]">{active.overlayOpacity}%</span></div><div className="mt-2 grid grid-cols-2 gap-2"><label className="flex items-center gap-2 rounded-xl border border-black/10 bg-[#f5f4ef] p-2"><input type="color" value={active.gradientStart} onChange={e => updateActive({ gradientStart: e.target.value })} className="h-7 w-7 cursor-pointer rounded-lg border-0 bg-transparent p-0" /><span className="font-mono text-[.58rem] text-[#77736c]">Start</span></label><label className="flex items-center gap-2 rounded-xl border border-black/10 bg-[#f5f4ef] p-2"><input type="color" value={active.gradientEnd} onChange={e => updateActive({ gradientEnd: e.target.value })} className="h-7 w-7 cursor-pointer rounded-lg border-0 bg-transparent p-0" /><span className="font-mono text-[.58rem] text-[#77736c]">End</span></label></div><div className="mt-3 flex items-center gap-2"><span className="eyebrow text-[#77736c]">Direction</span>{([{ label: "↓", angle: 180 }, { label: "→", angle: 90 }, { label: "↑", angle: 0 }, { label: "←", angle: 270 }] as const).map(item => <button key={item.angle} onClick={() => updateActive({ gradientAngle: item.angle })} className={`rounded-lg border px-2.5 py-1 text-xs ${active.gradientAngle === item.angle ? "border-[#8da28f] bg-[#eaf1e8]" : "border-black/10"}`}>{item.label}</button>)}</div><input type="range" min="0" max="100" value={active.overlayOpacity} onChange={e => updateActive({ overlayOpacity: Number(e.target.value) })} className="mt-3 w-full accent-[#819686]" /></div>
+            <div className="grid grid-cols-2 gap-3"><label className="block"><span className="eyebrow text-[#77736c]">Text size</span><select value={active.textSize} onChange={e => updateActive({ textSize: e.target.value as Card["textSize"] })} className="mt-2 w-full rounded-xl border border-black/10 bg-[#f5f4ef] px-3 py-2 text-xs"><option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option></select></label><label className="block"><span className="eyebrow text-[#77736c]">Alignment</span><div className="mt-2 grid grid-cols-2 gap-1"><button onClick={() => updateActive({ textAlign: "left" })} className={`rounded-lg border px-2 py-2 text-[.65rem] ${active.textAlign === "left" ? "border-[#8da28f] bg-[#eaf1e8]" : "border-black/10"}`}>Left</button><button onClick={() => updateActive({ textAlign: "center" })} className={`rounded-lg border px-2 py-2 text-[.65rem] ${active.textAlign === "center" ? "border-[#8da28f] bg-[#eaf1e8]" : "border-black/10"}`}>Center</button></div></label></div>
             <div className="flex items-center justify-between border-t border-black/10 pt-5"><div className="flex gap-1"><button onClick={() => moveActive(-1)} className="rounded-lg border border-black/10 p-2 hover:bg-[#f5f4ef]" title="Move left"><ArrowUp size={15} /></button><button onClick={() => moveActive(1)} className="rounded-lg border border-black/10 p-2 hover:bg-[#f5f4ef]" title="Move right"><ArrowDown size={15} /></button></div><button onClick={removeActive} className="inline-flex items-center gap-2 rounded-lg px-2 py-2 text-xs text-[#a25d50] hover:bg-[#f5e6e1]"><Trash2 size={14} /> Remove card</button></div>
           </div> : <p className="text-sm leading-relaxed text-[#77736c]">Select a story card to start editing its copy and placement.</p>}</div>
           <div className="mt-4 rounded-[1.5rem] border border-black/10 bg-[#252321] p-5 text-[#f5f4ef]"><div className="flex items-start justify-between gap-4"><div><p className="eyebrow text-[#aaa49b]">Save your work</p><p className="mt-2 font-display text-xl">Name this sequence</p></div><Check size={18} className="text-[#b8cfba]" /></div><input value={sequenceName} onChange={e => setSequenceName(e.target.value)} className="mt-5 w-full border-b border-white/20 bg-transparent py-2 text-sm outline-none focus:border-[#b8cfba]" /><button onClick={saveSequence} disabled={!canUseSequenceActions(cards.length)} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#f5f4ef] py-3 text-sm font-semibold text-[#252321] hover:bg-white disabled:cursor-not-allowed disabled:opacity-40">Save sequence <span>→</span></button></div>
         </aside>
       </div>
 
-      <section className="mt-16 border-t border-black/10 pt-8"><div className="mb-5 flex items-end justify-between"><div><p className="eyebrow text-[#77736c]">Your library</p><h2 className="mt-2 font-display text-3xl tracking-[-.04em]">Past sequences</h2></div><span className="text-sm text-[#77736c]">{saved.length} saved</span></div>{saved.length ? <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">{saved.map(item => <button key={item.id} onClick={() => { setCards(item.cards); setSequenceName(item.name); setActiveId(item.cards[0]?.id ?? ""); }} className="flex items-center gap-4 rounded-2xl border border-black/10 bg-[#fbfaf7] p-3 text-left hover:-translate-y-0.5 hover:border-[#8da28f]"><div className="flex -space-x-3">{item.cards.slice(0, 3).map(card => <img key={card.id} src={card.image} alt="" className="h-12 w-9 rounded-lg object-cover ring-2 ring-[#fbfaf7]" />)}</div><div className="min-w-0"><p className="truncate text-sm font-semibold">{item.name}</p><p className="mt-1 font-mono text-[.62rem] text-[#938e85]">{item.cards.length} cards · {new Date(item.updatedAt).toLocaleDateString()}</p></div></button>)}</div> : <div className="rounded-2xl border border-dashed border-black/15 px-5 py-8 text-center text-sm text-[#77736c]">Saved sequences will appear here.</div>}</section>
+      <section className="mt-16 border-t border-black/10 pt-8"><div className="mb-5 flex items-end justify-between"><div><p className="eyebrow text-[#77736c]">Your library</p><h2 className="mt-2 font-display text-3xl tracking-[-.04em]">Past sequences</h2></div><span className="text-sm text-[#77736c]">{saved.length} saved</span></div>{saved.length ? <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">{saved.map(item => <button key={item.id} onClick={() => { setCards(item.cards.map(normalizeCard)); setSequenceName(item.name); setActiveId(item.cards[0]?.id ?? ""); }} className="flex items-center gap-4 rounded-2xl border border-black/10 bg-[#fbfaf7] p-3 text-left hover:-translate-y-0.5 hover:border-[#8da28f]"><div className="flex -space-x-3">{item.cards.slice(0, 3).map(card => <img key={card.id} src={card.image} alt="" className="h-12 w-9 rounded-lg object-cover ring-2 ring-[#fbfaf7]" />)}</div><div className="min-w-0"><p className="truncate text-sm font-semibold">{item.name}</p><p className="mt-1 font-mono text-[.62rem] text-[#938e85]">{item.cards.length} cards · {new Date(item.updatedAt).toLocaleDateString()}</p></div></button>)}</div> : <div className="rounded-2xl border border-dashed border-black/15 px-5 py-8 text-center text-sm text-[#77736c]">Saved sequences will appear here.</div>}</section>
     </main>
     <footer className="mx-auto flex max-w-[1440px] justify-between px-5 pb-8 pt-2 text-[.65rem] text-[#938e85] lg:px-10"><span className="font-mono">STORYLOOM / 2026</span><span>Made for the moments worth keeping.</span></footer>
   </div>;
 }
 
-function wrapText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number) {
-  const words = text.split(" "); let line = "";
+function hexToRgba(hex: string, alpha: number) {
+  const value = hex.replace("#", ""); const r = parseInt(value.slice(0, 2), 16); const g = parseInt(value.slice(2, 4), 16); const b = parseInt(value.slice(4, 6), 16);
+  return `rgba(${Number.isFinite(r) ? r : 0},${Number.isFinite(g) ? g : 0},${Number.isFinite(b) ? b : 0},${alpha})`;
+}
+
+function drawRoundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
+  ctx.beginPath(); ctx.roundRect(x, y, width, height, radius);
+}
+
+function wrapText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number, align: CanvasTextAlign = "left") {
+  const words = text.split(" "); let line = ""; ctx.textAlign = align;
   for (const word of words) { const test = line ? `${line} ${word}` : word; if (ctx.measureText(test).width > maxWidth && line) { ctx.fillText(line, x, y); line = word; y += lineHeight; } else line = test; }
   if (line) ctx.fillText(line, x, y);
 }

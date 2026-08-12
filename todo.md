@@ -55,3 +55,30 @@
 
 - [x] Refactor the live Create stories handler to use the tested creation-flow helper
 - [x] Re-run checks and verify the production path before checkpointing
+
+## Visual editor upgrade
+
+- [x] Add per-card text treatment controls for plain, glass, and blurred-glass panels
+- [x] Add per-card solid text color control with a curated palette and custom color input
+- [x] Add per-card gradient overlay controls with editable gradient colors, direction, and strength
+- [x] Add richer Figma-like card styling controls for text scale, radius, alignment, and overlay intensity
+- [x] Improve the rendered card preview and export renderer so styling controls affect share-ready output
+- [x] Add tests for visual-style serialization and export styling behavior
+- [x] Verify the upgraded editor visually on desktop and mobile
+
+## Visual editor verification fixes
+
+- [x] Add curated preset text-color swatches alongside the custom color picker
+- [x] Add user-facing gradient direction controls and connect them to gradientAngle
+- [x] Add meaningful tests for production export styling behavior
+
+## Export behavior verification
+
+- [x] Extract the production export-style configuration into a shared helper
+- [x] Test export configuration for treatment, gradient direction, color, alignment, radius, and opacity
+- [x] Re-run checks after the export behavior test is wired
+
+## Export test coverage fix
+
+- [x] Add Vitest coverage for exportStyleConfig across treatment, gradient angle, text color, alignment, radius, and opacity
+- [x] Re-run checks after the exportStyleConfig test is added

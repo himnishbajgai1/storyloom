@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canUseSequenceActions, createStoryCards, exportFilename, moveCard, sequenceSnapshot, updateCard } from "../client/src/lib/storySequence";
+import { canUseSequenceActions, createStoryCards, exportFilename, exportStyleConfig, moveCard, sequenceSnapshot, updateCard, visualStyleSnapshot } from "../client/src/lib/storySequence";
 
 describe("story sequence utilities", () => {
   const cards = [{ id: "a", headline: "A" }, { id: "b", headline: "B" }, { id: "c", headline: "C" }];
@@ -38,5 +38,13 @@ describe("story sequence utilities", () => {
     const generated = await createStoryCards(uploaded, "book more calls", async (card, goal) => ({ headline: `${goal}: ${card.id}` }));
     expect(generated[0]?.headline).toBe("book more calls: photo-1");
     await expect(createStoryCards(uploaded, "", async () => ({ headline: "should not run" }))).rejects.toThrow("story goal");
+  });
+
+  it("serializes visual styles with bounded gradient and opacity values", () => {
+    expect(visualStyleSnapshot({ textTreatment: "blur", textColor: "#fff", gradientStart: "#111111", gradientEnd: "#8da28f", gradientAngle: 480, overlayOpacity: 140, textSize: "large", textAlign: "center", radius: "round" })).toEqual({ textTreatment: "blur", textColor: "#fff", gradient: { start: "#111111", end: "#8da28f", angle: 360 }, overlayOpacity: 100, textSize: "large", textAlign: "center", radius: "round" });
+  });
+
+  it("builds the exact export style configuration used by the canvas renderer", () => {
+    expect(exportStyleConfig({ textTreatment: "blur", textColor: "#f8e7c9", gradientStart: "#18231f", gradientEnd: "#8da28f", gradientAngle: 270, overlayOpacity: 70, textSize: "large", textAlign: "center", radius: "round" })).toEqual({ treatment: "blur", textColor: "#f8e7c9", gradient: { start: "#18231f", end: "#8da28f", angle: 270 }, overlayAlpha: 0.7, align: "center", radius: "round", headlineScale: 1.18 });
   });
 });
