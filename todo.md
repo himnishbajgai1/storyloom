@@ -82,3 +82,21 @@
 
 - [x] Add Vitest coverage for exportStyleConfig across treatment, gradient angle, text color, alignment, radius, and opacity
 - [x] Re-run checks after the exportStyleConfig test is added
+
+## Spacing and true glass upgrade
+
+- [x] Add card text-panel padding controls for horizontal and vertical spacing
+- [x] Add glass opacity, blur strength, border opacity, and shadow strength controls
+- [x] Add text line-height and letter-spacing controls
+- [x] Add text-panel width and offset controls for more design freedom
+- [x] Make the glass treatment use a visible frosted backdrop effect in the live card preview
+- [x] Apply the new spacing and glass settings to share-ready exports
+- [x] Add tests for spacing and glass export configuration
+- [x] Verify the refined card editor visually on desktop and mobile
+
+## Final glass fidelity fixes
+
+- [x] Add a user-facing vertical panel offset control
+- [x] Apply letter spacing in canvas export rendering
+- [x] Add a supported blur-strength approximation to canvas export rendering
+- [x] Re-run checks after the final glass fidelity fixes
