@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertStorySequence, InsertUser, storySequences, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -87,6 +87,19 @@ export async function getUserByOpenId(openId: string) {
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
 
   return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createStorySequence(sequence: InsertStorySequence) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  const result = await db.insert(storySequences).values(sequence);
+  return Number(result[0].insertId);
+}
+
+export async function getStorySequencesByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(storySequences).where(eq(storySequences.userId, userId));
 }
 
 // TODO: add feature queries here as your schema grows.
