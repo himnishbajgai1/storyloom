@@ -171,3 +171,26 @@
 ## Screenshot evidence closure
 
 - [x] Update export-verification.md with screenshot-specific findings for the final opened PNG
+
+## Final example-inspired story sequencing upgrade
+
+- [x] Add conversion-focused sequence presets based on the supplied examples: hook, problem, mechanism, proof, CTA
+- [x] Add per-card CTA and supporting badge/ribbon blocks so stories can end with actions such as Watch now or See how it works
+- [x] Add richer editorial composition controls for eyebrow, headline, body, CTA, and step/ribbon blocks
+- [x] Improve the editor workspace so the active card preview and controls remain clear while editing
+- [x] Add a stronger final story-sequence overview and card role labels
+- [x] Ensure generated copy and exports use the chosen sequence structure consistently
+- [x] Add tests for sequence roles, CTA blocks, and example-inspired export configuration
+- [x] Verify the final story sequence output visually on desktop and mobile
+
+## Role-aware AI generation closure
+
+- [x] Pass the selected sequence preset and per-card role into the AI generation contract and prompt
+- [x] Add shared deterministic role/preset assignment helpers for the editor and saved sequences
+- [x] Add Vitest coverage for role assignment, preset mapping, and role-aware generation inputs
+- [x] Re-run checks and visually verify the role-aware sequence flow before checkpointing
+
+## Role-aware evidence follow-up
+
+- [x] Add a mocked valid-role generation test proving role and preset reach the AI prompt
+- [x] Capture fresh desktop and mobile verification after role-aware AI wiring

@@ -39,7 +39,7 @@ export const appRouter = router({
         return { id, name: input.name };
       }),
     generateCopy: publicProcedure
-      .input(z.object({ imageDataUrl: z.string().min(1), tone: z.string().default("warm and editorial"), goal: z.string().min(3, "Tell us what this story should help you do."), cardNumber: z.number().int().min(1) }))
+      .input(z.object({ imageDataUrl: z.string().min(1), tone: z.string().default("warm and editorial"), goal: z.string().min(3, "Tell us what this story should help you do."), cardNumber: z.number().int().min(1), role: z.enum(["hook", "problem", "mechanism", "proof", "cta"]).default("hook"), sequencePreset: z.enum(["conversion", "education", "launch"]).default("conversion") }))
       .mutation(async ({ input }) => {
         const response = await invokeLLM({
           messages: [
@@ -50,7 +50,7 @@ export const appRouter = router({
             {
               role: "user",
               content: [
-                { type: "text", text: `Create copy for story card ${input.cardNumber}. Tone: ${input.tone}. The product/story goal is: ${input.goal}. Write toward that outcome without making unsupported claims. Make it feel specific to what is visible in the image, but never claim details that are not apparent.` },
+                { type: "text", text: `Create copy for story card ${input.cardNumber} in a ${input.sequencePreset} sequence. Its narrative role is ${input.role}. Tone: ${input.tone}. The product/story goal is: ${input.goal}. Write toward that outcome without making unsupported claims. Role guidance: hook creates curiosity, problem names the costly friction, mechanism explains the path, proof makes the idea credible without inventing results, and cta gives a clear next action. Make it feel specific to what is visible in the image, but never claim details that are not apparent.` },
                 { type: "image_url", image_url: { url: input.imageDataUrl, detail: "low" } },
               ],
             },

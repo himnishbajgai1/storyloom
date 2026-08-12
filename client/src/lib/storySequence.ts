@@ -1,5 +1,17 @@
 export type StoryCardLike = { id: string; [key: string]: unknown };
 
+export type StorySequencePreset = "conversion" | "education" | "launch";
+export type StorySequenceRole = "hook" | "problem" | "mechanism" | "proof" | "cta";
+
+export function sequenceRoleOrder(preset: StorySequencePreset): StorySequenceRole[] {
+  return preset === "launch" ? ["hook", "mechanism", "proof", "problem", "cta"] : ["hook", "problem", "mechanism", "proof", "cta"];
+}
+
+export function roleForCard(preset: StorySequencePreset, index: number): StorySequenceRole {
+  const order = sequenceRoleOrder(preset);
+  return order[Math.min(Math.max(0, index), order.length - 1)];
+}
+
 export function moveCard<T extends StoryCardLike>(cards: T[], index: number, direction: -1 | 1): T[] {
   const target = index + direction;
   if (index < 0 || index >= cards.length || target < 0 || target >= cards.length) return cards;
@@ -91,13 +103,14 @@ export function exportCardRenderPlan(card: { placement: "top" | "center" | "bott
   return { anchor: storyPanelAnchor(card.placement), drawPanel: shouldDrawTextPanel({ treatment: card.textTreatment, textEffect: card.textEffect }) } as const;
 }
 
-export function exportCardConfig(card: { headline: string; caption: string; placement: "top" | "center" | "bottom"; textTreatment: string; textEffect?: string; textScale?: number; textSize: string; textAlign: string; radius: string; gradientStart: string; gradientEnd: string; gradientAngle: number; textColor: string; overlayOpacity: number; panelPaddingX?: number; panelPaddingY?: number; glassOpacity?: number; blurStrength?: number; borderOpacity?: number; shadowStrength?: number; lineHeight?: number; letterSpacing?: number; panelWidth?: number; panelOffsetX?: number; panelOffsetY?: number }) {
+export function exportCardConfig(card: { headline: string; caption: string; badge?: string; cta?: string; steps?: string; placement: "top" | "center" | "bottom"; textTreatment: string; textEffect?: string; textScale?: number; textSize: string; textAlign: string; radius: string; gradientStart: string; gradientEnd: string; gradientAngle: number; textColor: string; overlayOpacity: number; panelPaddingX?: number; panelPaddingY?: number; glassOpacity?: number; blurStrength?: number; borderOpacity?: number; shadowStrength?: number; lineHeight?: number; letterSpacing?: number; panelWidth?: number; panelOffsetX?: number; panelOffsetY?: number }) {
   const visual = exportStyleConfig(card);
   const headlineScale = fitTextScale({ baseScale: visual.textScale, headline: card.headline, caption: card.caption });
   const captionScale = fitCaptionScale({ baseScale: 30, caption: card.caption });
   const headlineLines = estimateTextLines(card.headline, Math.max(10, Math.floor(((1080 * (visual.panelWidth / 100)) - visual.paddingX * 2) / Math.max(1, headlineScale * 0.55))));
   const captionLines = estimateTextLines(card.caption, Math.max(18, Math.floor(((1080 * (visual.panelWidth / 100)) - visual.paddingX * 2) / Math.max(1, captionScale * 0.55))));
-  const panelHeight = 150 + visual.paddingY * 2 + headlineLines * headlineScale * visual.lineHeight + captionLines * captionScale * (visual.lineHeight + .25) + 80;
+  const blockHeight = (card.badge ? 44 : 0) + (card.steps ? 54 : 0) + (card.cta ? 64 : 0);
+  const panelHeight = 150 + visual.paddingY * 2 + headlineLines * headlineScale * visual.lineHeight + captionLines * captionScale * (visual.lineHeight + .25) + 80 + blockHeight;
   const renderPlan = exportCardRenderPlan(card);
   return { headlineScale, captionScale, panel: safePanelLayout({ canvasWidth: 1080, canvasHeight: 1920, panelWidth: visual.panelWidth, panelHeight, offsetX: visual.offsetX, offsetY: visual.offsetY, placement: card.placement, anchor: renderPlan.anchor }), drawPanel: renderPlan.drawPanel, watermark: exportMetadata().watermark } as const;
 }

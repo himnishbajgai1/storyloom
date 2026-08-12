@@ -1,8 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { canUseSequenceActions, copyableCardStyle, createStoryCards, exportCardConfig, exportCardRenderPlan, exportFilename, exportMetadata, exportRenderPlan, exportStyleConfig, fitTextScale, moveCard, safePanelLayout, shouldDrawTextPanel, storyPanelAnchor, sequenceSnapshot, updateCard, visualStyleSnapshot } from "../client/src/lib/storySequence";
+import { canUseSequenceActions, copyableCardStyle, createStoryCards, exportCardConfig, roleForCard, sequenceRoleOrder, exportCardRenderPlan, exportFilename, exportMetadata, exportRenderPlan, exportStyleConfig, fitTextScale, moveCard, safePanelLayout, shouldDrawTextPanel, storyPanelAnchor, sequenceSnapshot, updateCard, visualStyleSnapshot } from "../client/src/lib/storySequence";
 
 describe("story sequence utilities", () => {
   const cards = [{ id: "a", headline: "A" }, { id: "b", headline: "B" }, { id: "c", headline: "C" }];
+
+  it("maps conversion and launch presets to deterministic narrative roles", () => {
+    expect(sequenceRoleOrder("conversion")).toEqual(["hook", "problem", "mechanism", "proof", "cta"]);
+    expect(sequenceRoleOrder("launch")).toEqual(["hook", "mechanism", "proof", "problem", "cta"]);
+    expect(roleForCard("launch", 2)).toBe("proof");
+    expect(roleForCard("conversion", 99)).toBe("cta");
+  });
 
   it("moves a card without mutating the original sequence", () => {
     expect(moveCard(cards, 1, -1).map(card => card.id)).toEqual(["b", "a", "c"]);
@@ -57,6 +64,14 @@ describe("story sequence utilities", () => {
     expect(config.panel.y + config.panel.height).toBeLessThanOrEqual(1747.2);
     expect(config.drawPanel).toBe(false);
     expect(config.watermark).toBe(false);
+  });
+
+  it("reserves export space for example-inspired CTA blocks", () => {
+    const base = { headline: "Hook", caption: "Caption", placement: "bottom", textTreatment: "glass", textEffect: "solid", textScale: 58, textSize: "medium", textAlign: "left", radius: "soft", gradientStart: "#18231f", gradientEnd: "#8da28f", gradientAngle: 180, textColor: "#ffffff", overlayOpacity: 70, panelWidth: 84 } as any;
+    const plain = exportCardConfig(base);
+    const withBlocks = exportCardConfig({ ...base, badge: "WHY THIS WORKS", steps: "Message → Method → Momentum", cta: "Watch now →" });
+    expect(withBlocks.panel.height).toBeGreaterThan(plain.panel.height);
+    expect(withBlocks.watermark).toBe(false);
   });
 
   it("keeps exported panels inside the story safe area", () => {
