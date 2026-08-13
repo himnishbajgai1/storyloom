@@ -4,6 +4,8 @@ export type StorySequencePreset = "conversion" | "education" | "launch";
 export type StorySequenceRole = "hook" | "problem" | "mechanism" | "proof" | "cta";
 export type VisualPreset = "luxury" | "bold" | "minimal";
 
+export const EXPORT_SCALE = 3.6;
+
 export function readableStoryTextColor(hex: string, treatment: string) {
   return treatment === "plain" ? hex : "#fffaf0";
 }
@@ -165,15 +167,24 @@ export function exportCardRenderPlan(card: { placement: "top" | "center" | "bott
 
 export function exportCardConfig(card: { headline: string; caption: string; kicker?: string; badge?: string; cta?: string; steps?: string; placement: "top" | "center" | "bottom"; textTreatment: string; textEffect?: string; textScale?: number; textSize: string; textAlign: string; radius: string; gradientStart: string; gradientEnd: string; gradientAngle: number; textColor: string; overlayOpacity: number; panelPaddingX?: number; panelPaddingY?: number; glassOpacity?: number; blurStrength?: number; borderOpacity?: number; shadowStrength?: number; lineHeight?: number; letterSpacing?: number; panelWidth?: number; panelOffsetX?: number; panelOffsetY?: number; badgeColor?: string; ctaColor?: string; roleColor?: string }) {
   const visual = exportStyleConfig(card); const badgeColor = card.badgeColor ?? "#d7b27b"; const ctaColor = card.ctaColor ?? "#d7b27b"; const roleColor = card.roleColor ?? "#f8f1e8";
-  const headlineScale = fitTextScale({ baseScale: visual.textScale, headline: card.headline, caption: card.caption });
-  const captionScale = fitCaptionScale({ baseScale: 30, caption: card.caption });
-  const flowInput = storyCardFlowInput({ headline: card.headline, caption: card.caption, panelWidth: visual.panelWidth, paddingX: visual.paddingX, headlineSize: headlineScale, captionBaseScale: 30, lineHeight: visual.lineHeight, panelY: 0, panelHeight: 0, paddingY: visual.paddingY, showAction: Boolean(card.cta) });
+  const baseHeadlineScale = fitTextScale({ baseScale: visual.textScale, headline: card.headline, caption: card.caption });
+  const baseCaptionScale = fitCaptionScale({ baseScale: 30, caption: card.caption });
+  const baseHeadlineLines = estimateTextLines(card.headline, Math.max(10, Math.floor(((1080 * (visual.panelWidth / 100)) - visual.paddingX * 2) / Math.max(1, baseHeadlineScale * 0.55))));
+  const baseCaptionLines = estimateTextLines(card.caption, Math.max(18, Math.floor(((1080 * (visual.panelWidth / 100)) - visual.paddingX * 2) / Math.max(1, baseCaptionScale * 0.55))));
+  const baseBlockHeight = (card.badge ? 44 : 0) + (card.kicker ? 34 : 0) + (card.steps ? 54 : 0) + (card.cta ? 64 : 0);
+  const basePanelHeight = 150 + visual.paddingY * 2 + baseHeadlineLines * baseHeadlineScale * visual.lineHeight + baseCaptionLines * baseCaptionScale * (visual.lineHeight + .25) + 80 + baseBlockHeight;
+  const renderScale = Math.min(EXPORT_SCALE, (1920 * 0.82) / Math.max(1, basePanelHeight));
+  const exportPaddingX = visual.paddingX * renderScale;
+  const exportPaddingY = visual.paddingY * renderScale;
+  const headlineScale = baseHeadlineScale * renderScale;
+  const captionScale = baseCaptionScale * renderScale;
+  const flowInput = storyCardFlowInput({ headline: card.headline, caption: card.caption, panelWidth: visual.panelWidth, paddingX: exportPaddingX, headlineSize: headlineScale, captionBaseScale: baseCaptionScale * renderScale, lineHeight: visual.lineHeight, panelY: 0, panelHeight: 0, paddingY: exportPaddingY, showAction: Boolean(card.cta) });
   const headlineLines = flowInput.headlineLines;
   const captionLines = flowInput.captionLines;
-  const blockHeight = (card.badge ? 44 : 0) + (card.kicker ? 34 : 0) + (card.steps ? 54 : 0) + (card.cta ? 64 : 0);
-  const panelHeight = 150 + visual.paddingY * 2 + headlineLines * headlineScale * visual.lineHeight + captionLines * captionScale * (visual.lineHeight + .25) + 80 + blockHeight;
+  const blockHeight = ((card.badge ? 44 : 0) + (card.kicker ? 34 : 0) + (card.steps ? 54 : 0) + (card.cta ? 64 : 0)) * renderScale;
+  const panelHeight = Math.min(1920 * 0.82, 150 * renderScale + exportPaddingY * 2 + headlineLines * headlineScale * visual.lineHeight + captionLines * captionScale * (visual.lineHeight + .25) + 80 * renderScale + blockHeight);
   const renderPlan = exportCardRenderPlan(card);
-  return { headlineScale, captionScale, headlineLines, captionLines, badgeColor, ctaColor, roleColor, panel: safePanelLayout({ canvasWidth: 1080, canvasHeight: 1920, panelWidth: visual.panelWidth, panelHeight, offsetX: visual.offsetX, offsetY: visual.offsetY, placement: card.placement, anchor: renderPlan.anchor }), drawPanel: renderPlan.drawPanel, watermark: exportMetadata().watermark } as const;
+  return { headlineScale, captionScale, headlineLines, captionLines, blockHeight, badgeColor, ctaColor, roleColor, paddingX: exportPaddingX, paddingY: exportPaddingY, panel: safePanelLayout({ canvasWidth: 1080, canvasHeight: 1920, panelWidth: visual.panelWidth, panelHeight, offsetX: visual.offsetX, offsetY: visual.offsetY, placement: card.placement, anchor: renderPlan.anchor }), drawPanel: renderPlan.drawPanel, watermark: exportMetadata().watermark } as const;
 }
 
 export function exportMetadata() {

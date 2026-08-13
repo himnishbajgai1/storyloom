@@ -286,3 +286,31 @@
 
 - [x] Build distinct preview-derived and export-derived flow inputs from the same card and compare the complete objects
 - [x] Compare complete preview and export vertical-flow outputs for the same card configuration
+
+## Remaining download mismatch
+
+- [x] Reproduce the exact user-reported downloaded PNG mismatch from the current live app
+- [x] Identify the remaining divergence between the live card state and actual download path
+- [x] Add a regression test for the exact failing export case
+- [x] Verify the corrected download artifact against the same-run live preview
+
+## Confirmed export text-scale mismatch
+
+- [x] Scale fitted preview typography into 1080×1920 export coordinates instead of reusing small CSS pixels
+- [x] Scale kicker, caption, ribbon, and CTA typography consistently with the export headline
+- [x] Add regression coverage proving the export scale preserves preview-relative hierarchy
+- [x] Generate and inspect a fresh download that matches the editor composition
+
+## Reproduced overlap failure
+
+- [x] Remove the duplicated headline offset from exported caption positioning
+- [x] Derive exported caption bottom and CTA baseline from the corrected absolute caption position
+- [x] Add regression coverage for no caption/headline overlap and no CTA/caption overlap
+- [x] Re-export and inspect the corrected PNG from the same live flow
+
+## Direct failing-case proof
+
+- [x] Add a regression test that reproduces the duplicated-caption-offset case and asserts caption starts below the headline block
+- [x] Add explicit assertions that caption bottom stays above the CTA/ribbon baseline for the reproduced card
+- [x] Add a hierarchy parity test covering headline, caption, kicker, ribbon, and CTA metrics
+- [x] Record file-specific findings for the latest same-run preview and PNG, confirming crop, hierarchy, spacing, and CTA placement

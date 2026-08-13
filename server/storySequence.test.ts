@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canUseSequenceActions, copyableCardStyle, createStoryCards, exportCardConfig, exportCropRect, clampPanelDrag, normalizeCardVisibility, roleForCard, sequenceRoleOrder, visualPresetStyle, exportCardRenderPlan, exportFilename, exportMetadata, exportRenderPlan, exportStyleConfig, fitTextScale, moveCard, safePanelLayout, shouldDrawTextPanel, storyPanelAnchor, sequenceSnapshot, updateCard, visualStyleSnapshot, storyCardVerticalFlow, storyCardFlowInput, storyCardFlowParity } from "../client/src/lib/storySequence";
+import { canUseSequenceActions, copyableCardStyle, createStoryCards, exportCardConfig, exportCropRect, clampPanelDrag, normalizeCardVisibility, roleForCard, sequenceRoleOrder, visualPresetStyle, exportCardRenderPlan, exportFilename, exportMetadata, exportRenderPlan, exportStyleConfig, fitTextScale, moveCard, safePanelLayout, shouldDrawTextPanel, storyPanelAnchor, sequenceSnapshot, updateCard, visualStyleSnapshot, storyCardVerticalFlow, storyCardFlowInput, storyCardFlowParity, EXPORT_SCALE } from "../client/src/lib/storySequence";
 
 describe("story sequence utilities", () => {
   const cards = [{ id: "a", headline: "A" }, { id: "b", headline: "B" }, { id: "c", headline: "C" }];
@@ -100,10 +100,13 @@ describe("story sequence utilities", () => {
 
   it("builds a safe, fitted, watermark-free production export config", () => {
     const config = exportCardConfig({ headline: "A very long headline that should be reduced to fit the 9:16 card", caption: "A longer caption that needs independent fitting so it stays readable and inside the safe panel.", placement: "bottom", textTreatment: "glass", textEffect: "glassText", textScale: 58, textSize: "medium", textAlign: "left", radius: "soft", gradientStart: "#18231f", gradientEnd: "#8da28f", gradientAngle: 135, textColor: "#ffffff", overlayOpacity: 70, panelPaddingX: 16, panelPaddingY: 16, glassOpacity: 22, blurStrength: 18, borderOpacity: 28, shadowStrength: 22, lineHeight: 1, letterSpacing: -0.04, panelWidth: 84, panelOffsetX: 0, panelOffsetY: 0 } as any);
-    expect(config.headlineScale).toBeLessThan(58);
-    expect(config.captionScale).toBeLessThanOrEqual(30);
-    expect(config.panel.y).toBeGreaterThanOrEqual(172.8);
-    expect(config.panel.y + config.panel.height).toBeLessThanOrEqual(1747.2);
+    expect(config.headlineScale).toBeLessThanOrEqual(58 * EXPORT_SCALE);
+    expect(config.headlineScale).toBeGreaterThan(58);
+    expect(config.captionScale).toBeLessThanOrEqual(30 * EXPORT_SCALE);
+    expect(config.paddingX).toBeGreaterThan(16);
+    expect(config.paddingY).toBeGreaterThan(16);
+    expect(config.panel.y).toBeGreaterThanOrEqual(172.8 - 0.01);
+    expect(config.panel.y + config.panel.height).toBeLessThanOrEqual(1747.2 + 0.01);
     expect(config.drawPanel).toBe(false);
     expect(config.watermark).toBe(false);
   });
@@ -113,8 +116,8 @@ describe("story sequence utilities", () => {
     const plain = exportCardConfig(base);
     const withBlocks = exportCardConfig({ ...base, badge: "WHY THIS WORKS", steps: "Message → Method → Momentum", cta: "Watch now →" });
     const hiddenBlocks = exportCardConfig({ ...base, steps: "Message → Method → Momentum" });
-    expect(withBlocks.panel.height).toBeGreaterThan(plain.panel.height);
-    expect(hiddenBlocks.panel.height).toBeLessThan(withBlocks.panel.height);
+    expect(withBlocks.blockHeight).toBeGreaterThan(plain.blockHeight);
+    expect(hiddenBlocks.blockHeight).toBeLessThan(withBlocks.blockHeight);
     expect(withBlocks.watermark).toBe(false);
   });
 
@@ -122,7 +125,8 @@ describe("story sequence utilities", () => {
     const base = { headline: "Add your story goal", caption: "Your AI-generated copy will appear here.", badge: "WHY THIS WORKS", placement: "bottom" as const, textTreatment: "glass", textSize: "medium", textAlign: "left", radius: "round", gradientStart: "#18231f", gradientEnd: "#8da28f", gradientAngle: 180, textColor: "#ffffff", overlayOpacity: 70 };
     const withoutKicker = exportCardConfig(base);
     const withKicker = exportCardConfig({ ...base, kicker: "Your story" });
-    expect(withKicker.panel.height).toBeGreaterThan(withoutKicker.panel.height);
+    expect(withKicker.blockHeight).toBeGreaterThan(withoutKicker.blockHeight);
+    expect(withKicker.panel.height).toBeLessThanOrEqual(1920 * 0.82 + 0.01);
     expect(withKicker.headlineScale).toBeGreaterThanOrEqual(28);
     expect(withKicker.watermark).toBe(false);
   });
@@ -132,6 +136,20 @@ describe("story sequence utilities", () => {
     expect(flow.captionY).toBeGreaterThan(0);
     expect(flow.actionY).toBeGreaterThan(flow.captionBottom);
     expect(flow.captionToActionGap).toBeGreaterThanOrEqual(flow.minimumGap);
+  });
+
+  it("prevents the reproduced export caption and CTA overlap", () => {
+    const card = { headline: "A clearer way to build your system.", caption: "Take a closer look at how the course modules connect your coaching offer to qualified calls.", kicker: "The approach", badge: "THE PROOF", cta: "See the full story →", placement: "bottom", textTreatment: "blur", textEffect: "solid", textScale: 78, textSize: "large", textAlign: "left", radius: "round", gradientStart: "#111111", gradientEnd: "#000000", gradientAngle: 180, textColor: "#fffaf0", overlayOpacity: 70, panelPaddingX: 22, panelPaddingY: 20, panelWidth: 84, lineHeight: 1 } as any;
+    const config = exportCardConfig(card);
+    const blockTop = config.panel.y + config.paddingY;
+    const textY = blockTop + 52 * EXPORT_SCALE + 30 * EXPORT_SCALE + config.headlineScale * 1.15;
+    const flow = storyCardVerticalFlow({ panelY: config.panel.y, panelHeight: config.panel.height, paddingY: config.paddingY, headlineLines: config.headlineLines, headlineSize: config.headlineScale, captionLines: config.captionLines, captionSize: config.captionScale, lineHeight: card.lineHeight, showAction: true });
+    const headlineBottom = textY + Math.max(0, config.headlineLines - 1) * config.headlineScale * card.lineHeight;
+    const captionY = blockTop + 52 * EXPORT_SCALE + 30 * EXPORT_SCALE + flow.captionY;
+    const captionBottom = captionY + (flow.captionBottom - flow.captionY);
+    const actionY = Math.max(config.panel.y + config.panel.height - config.paddingY - 42 * EXPORT_SCALE, captionBottom + 24 * EXPORT_SCALE);
+    expect(captionY).toBeGreaterThan(headlineBottom);
+    expect(actionY).toBeGreaterThan(captionBottom);
   });
 
   it("keeps actual preview and export flow paths aligned for one card", () => {
@@ -159,7 +177,7 @@ describe("story sequence utilities", () => {
     const preset = visualPresetStyle("luxury");
     const config = exportCardConfig({ headline: "Luxury story", caption: "A considered moment.", badge: "", cta: "", steps: "", placement: "bottom", ...preset } as any);
     expect(config.watermark).toBe(false);
-    expect(config.panel.height).toBeLessThan(exportCardConfig({ headline: "Luxury story", caption: "A considered moment.", badge: "THE PROBLEM", cta: "Watch now →", steps: "", placement: "bottom", ...preset } as any).panel.height);
+    expect(config.blockHeight).toBeLessThan(exportCardConfig({ headline: "Luxury story", caption: "A considered moment.", badge: "THE PROBLEM", cta: "Watch now →", steps: "", placement: "bottom", ...preset } as any).blockHeight);
   });
 
   it("keeps live and exported panel X offsets in the same coordinate system", () => {
