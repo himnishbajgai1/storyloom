@@ -230,3 +230,22 @@
 
 - [x] Capture a fresh live preview screenshot for the same card and settings as the corrected PNG
 - [x] Record a screenshot-specific side-by-side parity check for crop, panel position, text wrapping, and scale
+
+## Element color controls
+
+- [x] Add independent badge/eyebrow, CTA button, and card-role color fields to the card model with backward-compatible defaults
+- [x] Add editor color controls and apply them in the live preview
+- [x] Apply element colors to PNG export with preview/export parity
+- [x] Preserve element colors through save/list and reopen flows
+- [x] Add regression tests for serialization, persistence, and export color behavior
+- [x] Verify the updated controls and exported output on desktop and mobile
+
+## Element color parity follow-up
+
+- [x] Apply roleColor to the same visible step-ribbon role block in the live preview as the PNG export
+- [x] Run and inspect a fresh export after changing badge, CTA, and role colors, with findings tied to the artifact
+
+## Complete colored artifact evidence
+
+- [x] Generate one card with visible badge, CTA, and step ribbon using the three custom colors
+- [x] Open that exact PNG and record file-specific findings for all three colored elements

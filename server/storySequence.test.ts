@@ -118,6 +118,11 @@ describe("story sequence utilities", () => {
     expect(withBlocks.watermark).toBe(false);
   });
 
+  it("preserves independent badge, CTA, and role colors in export configuration", () => {
+    const config = exportCardConfig({ headline: "Color test", caption: "Caption", badge: "BADGE", cta: "Act now", steps: "Step", placement: "bottom", badgeColor: "#ff7a59", ctaColor: "#123456", roleColor: "#e7f0d0", ...visualPresetStyle("minimal") } as any);
+    expect(config).toMatchObject({ badgeColor: "#ff7a59", ctaColor: "#123456", roleColor: "#e7f0d0" });
+  });
+
   it("exports a preset with hidden badge and CTA blocks without a watermark", () => {
     const preset = visualPresetStyle("luxury");
     const config = exportCardConfig({ headline: "Luxury story", caption: "A considered moment.", badge: "", cta: "", steps: "", placement: "bottom", ...preset } as any);

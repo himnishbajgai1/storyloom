@@ -42,7 +42,11 @@ evaluate("""(() => { const button = [...document.querySelectorAll('button')].fin
 time.sleep(9)
 evaluate("""(() => { const button = [...document.querySelectorAll('button')].find(item => item.textContent?.trim() === 'Luxury'); button?.click(); return Boolean(button); })()""")
 time.sleep(.5)
-evaluate("""(() => { const labels = [...document.querySelectorAll('label')]; const badge = labels.find(item => item.textContent?.includes('Badge / eyebrow')); const cta = labels.find(item => item.textContent?.includes('CTA button')); badge?.querySelector('button')?.click(); cta?.querySelector('button')?.click(); return { badge: Boolean(badge), cta: Boolean(cta) }; })()""")
+evaluate("""(() => { const inputs = [...document.querySelectorAll('input[type=color]')]; const values = ['#ff7a59', '#123456', '#e7f0d0']; inputs.forEach((input, index) => { const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set; setter?.call(input, values[index]); input.dispatchEvent(new Event('input', { bubbles: true })); input.dispatchEvent(new Event('change', { bubbles: true })); }); return inputs.length; })()""")
+time.sleep(.5)
+evaluate("""(() => { const labels = [...document.querySelectorAll('label')]; const setValue = (label, value) => { const input = label?.querySelector('input'); if (!input) return false; const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set; setter?.call(input, value); input.dispatchEvent(new Event('input', { bubbles: true })); input.dispatchEvent(new Event('change', { bubbles: true })); return true; }; const badge = labels.find(item => item.textContent?.includes('Badge / eyebrow')); const cta = labels.find(item => item.textContent?.includes('CTA button')); const ribbon = labels.find(item => item.textContent?.includes('Step ribbon')); return { badge: setValue(badge, 'THE PROOF'), cta: setValue(cta, 'See the full story →'), ribbon: setValue(ribbon, 'Message → Method → Momentum') }; })()""")
+time.sleep(.5)
+evaluate("""(() => { const labels = [...document.querySelectorAll('label')]; return { badge: Boolean(labels.find(item => item.textContent?.includes('Badge / eyebrow'))), cta: Boolean(labels.find(item => item.textContent?.includes('CTA button'))) }; })()""")
 time.sleep(.5)
 preview_png = call("Page.captureScreenshot", {"format": "png"}).get("data")
 if preview_png:

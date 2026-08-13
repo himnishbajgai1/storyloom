@@ -43,16 +43,16 @@ describe("story persistence access", () => {
   it("saves with the signed-in user id and returns the created id", async () => {
     createStorySequence.mockResolvedValueOnce(42);
     const caller = appRouter.createCaller(authenticatedContext);
-    const result = await caller.story.save({ name: "My story", cards: [{ id: "1", headline: "Hello", showBadge: false, showCta: true, showRole: false }] });
+    const result = await caller.story.save({ name: "My story", cards: [{ id: "1", headline: "Hello", showBadge: false, showCta: true, showRole: false, badgeColor: "#ff7a59", ctaColor: "#123456", roleColor: "#e7f0d0" }] });
     expect(result).toEqual({ id: 42, name: "My story" });
-    expect(createStorySequence).toHaveBeenCalledWith(expect.objectContaining({ userId: 7, name: "My story", cardsJson: JSON.stringify([{ id: "1", headline: "Hello", showBadge: false, showCta: true, showRole: false }]) }));
+    expect(createStorySequence).toHaveBeenCalledWith(expect.objectContaining({ userId: 7, name: "My story", cardsJson: JSON.stringify([{ id: "1", headline: "Hello", showBadge: false, showCta: true, showRole: false, badgeColor: "#ff7a59", ctaColor: "#123456", roleColor: "#e7f0d0" }]) }));
   });
 
   it("lists and parses only the signed-in user’s stored cards", async () => {
-    getStorySequencesByUserId.mockResolvedValueOnce([{ id: 42, userId: 7, name: "My story", cardsJson: JSON.stringify([{ id: "1", showBadge: false, showCta: true, showRole: false }]), createdAt: new Date(), updatedAt: new Date() }]);
+    getStorySequencesByUserId.mockResolvedValueOnce([{ id: 42, userId: 7, name: "My story", cardsJson: JSON.stringify([{ id: "1", showBadge: false, showCta: true, showRole: false, badgeColor: "#ff7a59", ctaColor: "#123456", roleColor: "#e7f0d0" }]), createdAt: new Date(), updatedAt: new Date() }]);
     const caller = appRouter.createCaller(authenticatedContext);
     const result = await caller.story.listMine();
     expect(getStorySequencesByUserId).toHaveBeenCalledWith(7);
-    expect(result[0]?.cards).toEqual([{ id: "1", showBadge: false, showCta: true, showRole: false }]);
+    expect(result[0]?.cards).toEqual([{ id: "1", showBadge: false, showCta: true, showRole: false, badgeColor: "#ff7a59", ctaColor: "#123456", roleColor: "#e7f0d0" }]);
   });
 });

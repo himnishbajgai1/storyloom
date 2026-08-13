@@ -132,8 +132,8 @@ export function exportCardRenderPlan(card: { placement: "top" | "center" | "bott
   return { anchor: storyPanelAnchor(card.placement), drawPanel: shouldDrawTextPanel({ treatment: card.textTreatment, textEffect: card.textEffect }) } as const;
 }
 
-export function exportCardConfig(card: { headline: string; caption: string; badge?: string; cta?: string; steps?: string; placement: "top" | "center" | "bottom"; textTreatment: string; textEffect?: string; textScale?: number; textSize: string; textAlign: string; radius: string; gradientStart: string; gradientEnd: string; gradientAngle: number; textColor: string; overlayOpacity: number; panelPaddingX?: number; panelPaddingY?: number; glassOpacity?: number; blurStrength?: number; borderOpacity?: number; shadowStrength?: number; lineHeight?: number; letterSpacing?: number; panelWidth?: number; panelOffsetX?: number; panelOffsetY?: number }) {
-  const visual = exportStyleConfig(card);
+export function exportCardConfig(card: { headline: string; caption: string; badge?: string; cta?: string; steps?: string; placement: "top" | "center" | "bottom"; textTreatment: string; textEffect?: string; textScale?: number; textSize: string; textAlign: string; radius: string; gradientStart: string; gradientEnd: string; gradientAngle: number; textColor: string; overlayOpacity: number; panelPaddingX?: number; panelPaddingY?: number; glassOpacity?: number; blurStrength?: number; borderOpacity?: number; shadowStrength?: number; lineHeight?: number; letterSpacing?: number; panelWidth?: number; panelOffsetX?: number; panelOffsetY?: number; badgeColor?: string; ctaColor?: string; roleColor?: string }) {
+  const visual = exportStyleConfig(card); const badgeColor = card.badgeColor ?? "#d7b27b"; const ctaColor = card.ctaColor ?? "#d7b27b"; const roleColor = card.roleColor ?? "#f8f1e8";
   const headlineScale = fitTextScale({ baseScale: visual.textScale, headline: card.headline, caption: card.caption });
   const captionScale = fitCaptionScale({ baseScale: 30, caption: card.caption });
   const headlineLines = estimateTextLines(card.headline, Math.max(10, Math.floor(((1080 * (visual.panelWidth / 100)) - visual.paddingX * 2) / Math.max(1, headlineScale * 0.55))));
@@ -141,7 +141,7 @@ export function exportCardConfig(card: { headline: string; caption: string; badg
   const blockHeight = (card.badge ? 44 : 0) + (card.steps ? 54 : 0) + (card.cta ? 64 : 0);
   const panelHeight = 150 + visual.paddingY * 2 + headlineLines * headlineScale * visual.lineHeight + captionLines * captionScale * (visual.lineHeight + .25) + 80 + blockHeight;
   const renderPlan = exportCardRenderPlan(card);
-  return { headlineScale, captionScale, headlineLines, captionLines, panel: safePanelLayout({ canvasWidth: 1080, canvasHeight: 1920, panelWidth: visual.panelWidth, panelHeight, offsetX: visual.offsetX, offsetY: visual.offsetY, placement: card.placement, anchor: renderPlan.anchor }), drawPanel: renderPlan.drawPanel, watermark: exportMetadata().watermark } as const;
+  return { headlineScale, captionScale, headlineLines, captionLines, badgeColor, ctaColor, roleColor, panel: safePanelLayout({ canvasWidth: 1080, canvasHeight: 1920, panelWidth: visual.panelWidth, panelHeight, offsetX: visual.offsetX, offsetY: visual.offsetY, placement: card.placement, anchor: renderPlan.anchor }), drawPanel: renderPlan.drawPanel, watermark: exportMetadata().watermark } as const;
 }
 
 export function exportMetadata() {
