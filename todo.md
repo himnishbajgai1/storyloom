@@ -217,3 +217,16 @@
 
 - [x] Add a shared reopen visibility normalizer and test saved-card reload flags through it
 - [x] Produce a live exported PNG after preset and visibility changes and record file-specific findings
+
+## Export mismatch fix
+
+- [x] Reproduce and document the mismatch between live preview and downloaded PNG
+- [x] Align exported image crop, scale, and focal positioning with the live preview
+- [x] Align exported text wrapping, scale, and panel geometry with the live preview
+- [x] Add regression tests for the reported export framing and typography mismatch
+- [x] Verify a fresh downloaded PNG against the live preview and record findings
+
+## Preview/export parity evidence
+
+- [x] Capture a fresh live preview screenshot for the same card and settings as the corrected PNG
+- [x] Record a screenshot-specific side-by-side parity check for crop, panel position, text wrapping, and scale

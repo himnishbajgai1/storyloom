@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canUseSequenceActions, copyableCardStyle, createStoryCards, exportCardConfig, clampPanelDrag, normalizeCardVisibility, roleForCard, sequenceRoleOrder, visualPresetStyle, exportCardRenderPlan, exportFilename, exportMetadata, exportRenderPlan, exportStyleConfig, fitTextScale, moveCard, safePanelLayout, shouldDrawTextPanel, storyPanelAnchor, sequenceSnapshot, updateCard, visualStyleSnapshot } from "../client/src/lib/storySequence";
+import { canUseSequenceActions, copyableCardStyle, createStoryCards, exportCardConfig, exportCropRect, clampPanelDrag, normalizeCardVisibility, roleForCard, sequenceRoleOrder, visualPresetStyle, exportCardRenderPlan, exportFilename, exportMetadata, exportRenderPlan, exportStyleConfig, fitTextScale, moveCard, safePanelLayout, shouldDrawTextPanel, storyPanelAnchor, sequenceSnapshot, updateCard, visualStyleSnapshot } from "../client/src/lib/storySequence";
 
 describe("story sequence utilities", () => {
   const cards = [{ id: "a", headline: "A" }, { id: "b", headline: "B" }, { id: "c", headline: "C" }];
@@ -34,6 +34,22 @@ describe("story sequence utilities", () => {
       { id: "b", headline: "Edited" },
       { id: "c", headline: "C" },
     ]);
+  });
+
+  it("preserves the story crop aspect ratio and bounds focal positioning", () => {
+    const crop = exportCropRect(1080, 1920, 1.35, 85, 15);
+    expect(crop.sourceWidth / crop.sourceHeight).toBeCloseTo(9 / 16, 5);
+    expect(crop.sourceX).toBeGreaterThanOrEqual(0);
+    expect(crop.sourceY).toBeGreaterThanOrEqual(0);
+    expect(crop.sourceX + crop.sourceWidth).toBeLessThanOrEqual(1080);
+    expect(crop.sourceY + crop.sourceHeight).toBeLessThanOrEqual(1920);
+  });
+
+  it("exposes fitted line metadata for export text flow", () => {
+    const config = exportCardConfig({ headline: "A headline long enough to wrap across multiple lines", caption: "A longer caption that should remain readable inside the card panel.", placement: "bottom", textScale: 58 } as any);
+    expect(config.headlineLines).toBeGreaterThanOrEqual(1);
+    expect(config.captionLines).toBeGreaterThanOrEqual(1);
+    expect(config.panel.height).toBeGreaterThan(0);
   });
 
   it("normalizes saved cards for the editor reopen path", () => {
@@ -107,6 +123,12 @@ describe("story sequence utilities", () => {
     const config = exportCardConfig({ headline: "Luxury story", caption: "A considered moment.", badge: "", cta: "", steps: "", placement: "bottom", ...preset } as any);
     expect(config.watermark).toBe(false);
     expect(config.panel.height).toBeLessThan(exportCardConfig({ headline: "Luxury story", caption: "A considered moment.", badge: "THE PROBLEM", cta: "Watch now →", steps: "", placement: "bottom", ...preset } as any).panel.height);
+  });
+
+  it("keeps live and exported panel X offsets in the same coordinate system", () => {
+    const centered = safePanelLayout({ canvasWidth: 1080, canvasHeight: 1920, panelWidth: 84, panelHeight: 700, offsetX: 0, offsetY: 0, placement: "bottom" });
+    const dragged = safePanelLayout({ canvasWidth: 1080, canvasHeight: 1920, panelWidth: 84, panelHeight: 700, offsetX: 8, offsetY: 0, placement: "bottom" });
+    expect(dragged.x - centered.x).toBeCloseTo(86.4, 5);
   });
 
   it("keeps exported panels inside the story safe area", () => {

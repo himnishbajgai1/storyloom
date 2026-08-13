@@ -4,6 +4,17 @@ export type StorySequencePreset = "conversion" | "education" | "launch";
 export type StorySequenceRole = "hook" | "problem" | "mechanism" | "proof" | "cta";
 export type VisualPreset = "luxury" | "bold" | "minimal";
 
+export function exportCropRect(imageWidth: number, imageHeight: number, zoom = 1, positionX = 50, positionY = 50, canvasAspect = 9 / 16) {
+  const imageAspect = imageWidth / imageHeight;
+  const baseSourceWidth = imageAspect > canvasAspect ? imageHeight * canvasAspect : imageWidth;
+  const baseSourceHeight = imageAspect > canvasAspect ? imageHeight : imageWidth / canvasAspect;
+  const sourceWidth = baseSourceWidth / Math.max(1, zoom);
+  const sourceHeight = baseSourceHeight / Math.max(1, zoom);
+  const sourceX = Math.max(0, Math.min(imageWidth - sourceWidth, imageWidth * (positionX / 100) - sourceWidth / 2));
+  const sourceY = Math.max(0, Math.min(imageHeight - sourceHeight, imageHeight * (positionY / 100) - sourceHeight / 2));
+  return { sourceX, sourceY, sourceWidth, sourceHeight };
+}
+
 export function normalizeCardVisibility<T extends { showBadge?: boolean; showCta?: boolean; showRole?: boolean }>(card: T) {
   return { ...card, showBadge: card.showBadge ?? true, showCta: card.showCta ?? true, showRole: card.showRole ?? true };
 }
@@ -108,7 +119,7 @@ export function safePanelLayout(input: { canvasWidth: number; canvasHeight: numb
   const safeBottom = input.canvasHeight * 0.91;
   const anchor = input.anchor ?? storyPanelAnchor(input.placement);
   const preferredY = anchor.top !== null ? (input.placement === "center" ? input.canvasHeight * anchor.top - input.panelHeight / 2 : input.canvasHeight * anchor.top) : input.canvasHeight * (1 - (anchor.bottom ?? 0)) - input.panelHeight;
-  const x = (input.canvasWidth - width) / 2 + input.offsetX * 8;
+  const x = (input.canvasWidth - width) / 2 + input.offsetX * input.canvasWidth / 100;
   const y = Math.max(safeTop, Math.min(preferredY + input.offsetY * 4, safeBottom - input.panelHeight));
   return { x, y, width, height: input.panelHeight };
 }
@@ -130,7 +141,7 @@ export function exportCardConfig(card: { headline: string; caption: string; badg
   const blockHeight = (card.badge ? 44 : 0) + (card.steps ? 54 : 0) + (card.cta ? 64 : 0);
   const panelHeight = 150 + visual.paddingY * 2 + headlineLines * headlineScale * visual.lineHeight + captionLines * captionScale * (visual.lineHeight + .25) + 80 + blockHeight;
   const renderPlan = exportCardRenderPlan(card);
-  return { headlineScale, captionScale, panel: safePanelLayout({ canvasWidth: 1080, canvasHeight: 1920, panelWidth: visual.panelWidth, panelHeight, offsetX: visual.offsetX, offsetY: visual.offsetY, placement: card.placement, anchor: renderPlan.anchor }), drawPanel: renderPlan.drawPanel, watermark: exportMetadata().watermark } as const;
+  return { headlineScale, captionScale, headlineLines, captionLines, panel: safePanelLayout({ canvasWidth: 1080, canvasHeight: 1920, panelWidth: visual.panelWidth, panelHeight, offsetX: visual.offsetX, offsetY: visual.offsetY, placement: card.placement, anchor: renderPlan.anchor }), drawPanel: renderPlan.drawPanel, watermark: exportMetadata().watermark } as const;
 }
 
 export function exportMetadata() {

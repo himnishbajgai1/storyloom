@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 import sys
@@ -43,7 +44,11 @@ evaluate("""(() => { const button = [...document.querySelectorAll('button')].fin
 time.sleep(.5)
 evaluate("""(() => { const labels = [...document.querySelectorAll('label')]; const badge = labels.find(item => item.textContent?.includes('Badge / eyebrow')); const cta = labels.find(item => item.textContent?.includes('CTA button')); badge?.querySelector('button')?.click(); cta?.querySelector('button')?.click(); return { badge: Boolean(badge), cta: Boolean(cta) }; })()""")
 time.sleep(.5)
+preview_png = call("Page.captureScreenshot", {"format": "png"}).get("data")
+if preview_png:
+    with open("/home/ubuntu/Downloads/live-preview-e5ge9r.png", "wb") as output:
+        output.write(base64.b64decode(preview_png))
 evaluate("""(() => { const button = [...document.querySelectorAll('button')].find(item => item.textContent?.trim() === 'Export'); button?.click(); return Boolean(button); })()""")
 time.sleep(2)
-print(json.dumps({"url": url, "image": image_path, "downloads": [name for name in os.listdir('/home/ubuntu/Downloads') if name.endswith('.png')][-5:]}, indent=2))
+print(json.dumps({"url": url, "image": image_path, "preview": "/home/ubuntu/Downloads/live-preview-e5ge9r.png", "downloads": [name for name in os.listdir('/home/ubuntu/Downloads') if name.endswith('.png')][-5:]}, indent=2))
 ws.close()
