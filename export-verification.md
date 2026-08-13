@@ -33,3 +33,19 @@ The live preview and export renderer now both use `roleColor` for the visible st
 ## Complete colored artifact evidence
 
 The exact final artifact `/home/ubuntu/Downloads/pasted-file-e5ge9r-image (5).png` was opened at 1080×1920 with all three elements visible. The badge reads “THE PROOF” and uses the coral `#ff7a59` color; the step ribbon uses the pale green `#e7f0d0` role color; and the CTA reads “See the full story →” with the deep blue `#123456` color. Contrast-safe dark or light text is selected automatically for each element. The live step ribbon and canvas export now use the same role-color contract, and the artifact remains watermark-free.
+
+## Story card hierarchy verification
+
+The final clean-source export `/home/ubuntu/Downloads/img-7042 (3).png` was inspected at 1080×1920 after the hierarchy fix. The card now has a visibly larger white headline, a readable colored kicker below the badge, a separated caption with comfortable line spacing, a full-width role ribbon, and a distinct CTA button with balanced bottom spacing. The earlier near-black headline/caption issue was fixed by using a shared light-text contract for glass/blur treatments in both live preview and canvas export. The supplied screenshot source itself contained baked-in text, so the clean-source artifact was used for the renderer verification.
+
+## Same-run hierarchy parity closure
+
+The final same-run pair was inspected: `/home/ubuntu/Downloads/live-preview-e5ge9r.png` and `/home/ubuntu/Downloads/img-7042 (4).png`. Both show a large, light headline with readable kicker, separated caption, role ribbon, and balanced CTA/action area. The exported card preserves the live preview’s hierarchy and text contrast; the shared vertical-flow contract keeps caption content separated from the action baseline. The source photo used for this verification contains its own baked-in text, so the parity comparison focuses on the Storyloom-rendered card layer and its geometry rather than removing source-image text.
+
+## Final caption/CTA parity verification
+
+The final same-run pair `/home/ubuntu/Downloads/live-preview-e5ge9r.png` and `/home/ubuntu/Downloads/img-7042 (5).png` was inspected after wiring `storyCardVerticalFlow` into the live StoryCard. The preview and PNG both show the larger headline, readable eyebrow, separated caption, and a clean action area; the exported card preserves the same hierarchy and keeps its role/CTA blocks below the text flow. The PNG remains 1080×1920 and watermark-free.
+
+## Shared flow-input parity verification
+
+The final same-run pair `/home/ubuntu/Downloads/live-preview-e5ge9r.png` and `/home/ubuntu/Downloads/img-7042 (6).png` was inspected after extracting `storyCardFlowInput` and using it directly in both StoryCard preview and export configuration. Both artifacts show the same large headline hierarchy, readable eyebrow, caption line flow, and separated action area. The direct regression suite now compares the resolved shared flow metrics for the same card configuration; 38 tests pass.

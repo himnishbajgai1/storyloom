@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canUseSequenceActions, copyableCardStyle, createStoryCards, exportCardConfig, exportCropRect, clampPanelDrag, normalizeCardVisibility, roleForCard, sequenceRoleOrder, visualPresetStyle, exportCardRenderPlan, exportFilename, exportMetadata, exportRenderPlan, exportStyleConfig, fitTextScale, moveCard, safePanelLayout, shouldDrawTextPanel, storyPanelAnchor, sequenceSnapshot, updateCard, visualStyleSnapshot } from "../client/src/lib/storySequence";
+import { canUseSequenceActions, copyableCardStyle, createStoryCards, exportCardConfig, exportCropRect, clampPanelDrag, normalizeCardVisibility, roleForCard, sequenceRoleOrder, visualPresetStyle, exportCardRenderPlan, exportFilename, exportMetadata, exportRenderPlan, exportStyleConfig, fitTextScale, moveCard, safePanelLayout, shouldDrawTextPanel, storyPanelAnchor, sequenceSnapshot, updateCard, visualStyleSnapshot, storyCardVerticalFlow, storyCardFlowInput, storyCardFlowParity } from "../client/src/lib/storySequence";
 
 describe("story sequence utilities", () => {
   const cards = [{ id: "a", headline: "A" }, { id: "b", headline: "B" }, { id: "c", headline: "C" }];
@@ -118,6 +118,38 @@ describe("story sequence utilities", () => {
     expect(withBlocks.watermark).toBe(false);
   });
 
+  it("reserves kicker space in export flow without shrinking the headline contract", () => {
+    const base = { headline: "Add your story goal", caption: "Your AI-generated copy will appear here.", badge: "WHY THIS WORKS", placement: "bottom" as const, textTreatment: "glass", textSize: "medium", textAlign: "left", radius: "round", gradientStart: "#18231f", gradientEnd: "#8da28f", gradientAngle: 180, textColor: "#ffffff", overlayOpacity: 70 };
+    const withoutKicker = exportCardConfig(base);
+    const withKicker = exportCardConfig({ ...base, kicker: "Your story" });
+    expect(withKicker.panel.height).toBeGreaterThan(withoutKicker.panel.height);
+    expect(withKicker.headlineScale).toBeGreaterThanOrEqual(28);
+    expect(withKicker.watermark).toBe(false);
+  });
+
+  it("keeps caption flow separated from the CTA action baseline", () => {
+    const flow = storyCardVerticalFlow({ panelY: 1000, panelHeight: 650, paddingY: 24, headlineLines: 3, headlineSize: 68, captionLines: 3, captionSize: 30, lineHeight: 1, showAction: true });
+    expect(flow.captionY).toBeGreaterThan(0);
+    expect(flow.actionY).toBeGreaterThan(flow.captionBottom);
+    expect(flow.captionToActionGap).toBeGreaterThanOrEqual(flow.minimumGap);
+  });
+
+  it("keeps actual preview and export flow paths aligned for one card", () => {
+    const card = { headline: "Build the exact system, start to finish.", caption: "A clear path designed to help you connect everything and go live.", placement: "bottom", textTreatment: "blur", textEffect: "solid", textSize: "large", textScale: 78, textAlign: "left", radius: "round", gradientStart: "#111111", gradientEnd: "#000000", gradientAngle: 180, textColor: "#fffaf0", overlayOpacity: 60, panelWidth: 72, panelPaddingX: 36, panelPaddingY: 24, lineHeight: 1, cta: "See the full story", ...visualPresetStyle("luxury") } as const;
+    const exportConfig = exportCardConfig(card as any);
+    const exportStyle = exportStyleConfig(card as any);
+    const headlineSize = fitTextScale({ baseScale: exportStyle.textScale, headline: card.headline, caption: card.caption });
+    const previewInput = storyCardFlowInput({ headline: card.headline, caption: card.caption, panelWidth: card.panelWidth, paddingX: card.panelPaddingX, headlineSize, captionBaseScale: 14, lineHeight: card.lineHeight, panelY: exportConfig.panel.y, panelHeight: exportConfig.panel.height, paddingY: card.panelPaddingY, showAction: true });
+    const exportInput = storyCardFlowInput({ headline: card.headline, caption: card.caption, panelWidth: card.panelWidth, paddingX: card.panelPaddingX, headlineSize, captionBaseScale: 30, lineHeight: card.lineHeight, panelY: exportConfig.panel.y, panelHeight: exportConfig.panel.height, paddingY: card.panelPaddingY, showAction: Boolean(card.cta) });
+    const parity = storyCardFlowParity(previewInput, exportInput);
+    expect(parity.headlineLinesMatch).toBe(true);
+    expect(parity.captionWrapsAvailable).toBe(true);
+    expect(parity.lineHeightMatch).toBe(true);
+    expect(parity.actionVisibilityMatch).toBe(true);
+    expect(parity.previewFlow.captionY).toBe(parity.exportFlow.captionY);
+    expect(parity.previewFlow.actionY).toBe(parity.exportFlow.actionY);
+  });
+
   it("preserves independent badge, CTA, and role colors in export configuration", () => {
     const config = exportCardConfig({ headline: "Color test", caption: "Caption", badge: "BADGE", cta: "Act now", steps: "Step", placement: "bottom", badgeColor: "#ff7a59", ctaColor: "#123456", roleColor: "#e7f0d0", ...visualPresetStyle("minimal") } as any);
     expect(config).toMatchObject({ badgeColor: "#ff7a59", ctaColor: "#123456", roleColor: "#e7f0d0" });
@@ -164,6 +196,6 @@ describe("story sequence utilities", () => {
   });
 
   it("builds the exact export style configuration used by the canvas renderer", () => {
-    expect(exportStyleConfig({ fontFamily: "mono", textEffect: "blurText", textTreatment: "plain", textColor: "#f8e7c9", gradientStart: "#18231f", gradientEnd: "#8da28f", gradientAngle: 270, overlayOpacity: 70, textSize: "large", textAlign: "center", radius: "round", panelPaddingX: 28, panelPaddingY: 22, glassOpacity: 40, blurStrength: 24, borderOpacity: 35, shadowStrength: 30, lineHeight: 1.1, letterSpacing: -0.02, panelWidth: 76, panelOffsetX: 4, panelOffsetY: -10 })).toEqual({ fontFamily: "mono", textEffect: "blurText", treatment: "plain", textColor: "#f8e7c9", gradient: { start: "#18231f", end: "#8da28f", angle: 270 }, overlayAlpha: 0.7, align: "center", radius: "round", headlineScale: 1.18, textScale: 72, paddingX: 28, paddingY: 22, glassOpacity: 40, blurStrength: 24, borderOpacity: 35, shadowStrength: 30, lineHeight: 1.1, letterSpacing: -0.02, panelWidth: 76, offsetX: 4, offsetY: -10 });
+    expect(exportStyleConfig({ fontFamily: "mono", textEffect: "blurText", textTreatment: "plain", textColor: "#f8e7c9", gradientStart: "#18231f", gradientEnd: "#8da28f", gradientAngle: 270, overlayOpacity: 70, textSize: "large", textAlign: "center", radius: "round", panelPaddingX: 28, panelPaddingY: 22, glassOpacity: 40, blurStrength: 24, borderOpacity: 35, shadowStrength: 30, lineHeight: 1.1, letterSpacing: -0.02, panelWidth: 76, panelOffsetX: 4, panelOffsetY: -10 })).toEqual({ fontFamily: "mono", textEffect: "blurText", treatment: "plain", textColor: "#f8e7c9", gradient: { start: "#18231f", end: "#8da28f", angle: 270 }, overlayAlpha: 0.7, align: "center", radius: "round", headlineScale: 1.18, textScale: 78, paddingX: 28, paddingY: 22, glassOpacity: 40, blurStrength: 24, borderOpacity: 35, shadowStrength: 30, lineHeight: 1.1, letterSpacing: -0.02, panelWidth: 76, offsetX: 4, offsetY: -10 });
   });
 });

@@ -249,3 +249,40 @@
 
 - [x] Generate one card with visible badge, CTA, and step ribbon using the three custom colors
 - [x] Open that exact PNG and record file-specific findings for all three colored elements
+
+## Story card hierarchy fix
+
+- [x] Reproduce and document the mismatch between the intended card composition and current preview/export output
+- [x] Increase headline hierarchy and preserve readable kicker/eyebrow treatment in preview and export
+- [x] Correct caption flow and CTA spacing so blocks do not collapse or crowd the frame
+- [x] Add regression coverage for typography scale, vertical flow, and CTA placement
+- [x] Verify a fresh matching live preview and downloaded PNG
+
+## Story card hierarchy evidence follow-up
+
+- [x] Add a shared caption-to-CTA spacing contract used by preview and export
+- [x] Add direct tests for caption flow, CTA Y placement, and spacing bounds
+- [x] Capture and inspect a same-run final live preview paired with the final downloaded PNG
+
+## Preview contract parity closure
+
+- [x] Wire the shared caption-to-CTA spacing contract into the live StoryCard preview
+- [x] Add an explicit parity assertion proving preview and export use the same vertical flow values
+
+## Final vertical-flow parity assertion
+
+- [x] Add a direct regression assertion comparing preview-derived and export-derived caption/CTA flow values for the same card configuration
+
+## True preview/export flow assertion
+
+- [x] Extract a shared card flow-input helper used directly by live preview and export
+- [x] Add a regression test comparing the resolved flow inputs and outputs from both paths
+
+## Actual flow-path comparison
+
+- [x] Add a regression test that builds the preview-derived and export-derived flow inputs from the same card configuration and compares both inputs and outputs
+
+## Full flow parity assertion
+
+- [x] Build distinct preview-derived and export-derived flow inputs from the same card and compare the complete objects
+- [x] Compare complete preview and export vertical-flow outputs for the same card configuration

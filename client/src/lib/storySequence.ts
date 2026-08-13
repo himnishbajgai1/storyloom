@@ -4,6 +4,10 @@ export type StorySequencePreset = "conversion" | "education" | "launch";
 export type StorySequenceRole = "hook" | "problem" | "mechanism" | "proof" | "cta";
 export type VisualPreset = "luxury" | "bold" | "minimal";
 
+export function readableStoryTextColor(hex: string, treatment: string) {
+  return treatment === "plain" ? hex : "#fffaf0";
+}
+
 export function exportCropRect(imageWidth: number, imageHeight: number, zoom = 1, positionX = 50, positionY = 50, canvasAspect = 9 / 16) {
   const imageAspect = imageWidth / imageHeight;
   const baseSourceWidth = imageAspect > canvasAspect ? imageHeight * canvasAspect : imageWidth;
@@ -92,7 +96,7 @@ export function visualStyleSnapshot(style: { fontFamily?: string; textEffect?: s
 
 export function exportStyleConfig(style: Parameters<typeof visualStyleSnapshot>[0]) {
   const visual = visualStyleSnapshot(style);
-  return { fontFamily: visual.fontFamily, textEffect: visual.textEffect, treatment: visual.textTreatment, textColor: visual.textColor, gradient: visual.gradient, overlayAlpha: visual.overlayOpacity / 100, align: visual.textAlign, radius: visual.radius, headlineScale: visual.textSize === "large" ? 1.18 : visual.textSize === "small" ? 0.8 : 1, textScale: style.textScale ?? (visual.textSize === "large" ? 72 : visual.textSize === "small" ? 44 : 58), paddingX: visual.panelPaddingX, paddingY: visual.panelPaddingY, glassOpacity: visual.glassOpacity, blurStrength: visual.blurStrength, borderOpacity: visual.borderOpacity, shadowStrength: visual.shadowStrength, lineHeight: visual.lineHeight, letterSpacing: visual.letterSpacing, panelWidth: visual.panelWidth, offsetX: visual.panelOffsetX, offsetY: visual.panelOffsetY };
+  return { fontFamily: visual.fontFamily, textEffect: visual.textEffect, treatment: visual.textTreatment, textColor: visual.textColor, gradient: visual.gradient, overlayAlpha: visual.overlayOpacity / 100, align: visual.textAlign, radius: visual.radius, headlineScale: visual.textSize === "large" ? 1.18 : visual.textSize === "small" ? 0.8 : 1, textScale: style.textScale ?? (visual.textSize === "large" ? 78 : visual.textSize === "small" ? 46 : 68), paddingX: visual.panelPaddingX, paddingY: visual.panelPaddingY, glassOpacity: visual.glassOpacity, blurStrength: visual.blurStrength, borderOpacity: visual.borderOpacity, shadowStrength: visual.shadowStrength, lineHeight: visual.lineHeight, letterSpacing: visual.letterSpacing, panelWidth: visual.panelWidth, offsetX: visual.panelOffsetX, offsetY: visual.panelOffsetY };
 }
 
 export function fitTextScale(input: { baseScale: number; headline: string; caption: string }) {
@@ -107,6 +111,33 @@ export function fitCaptionScale(input: { baseScale: number; caption: string }) {
 
 export function estimateTextLines(text: string, charactersPerLine: number) {
   return Math.max(1, Math.ceil(text.trim().length / Math.max(1, charactersPerLine)));
+}
+
+export function storyCardFlowInput(input: { headline: string; caption: string; panelWidth: number; paddingX: number; headlineSize: number; captionBaseScale: number; lineHeight: number; panelY: number; panelHeight: number; paddingY: number; showAction: boolean; coordinateWidth?: number }) {
+  const width = input.coordinateWidth ?? 1080;
+  const captionSize = fitCaptionScale({ baseScale: input.captionBaseScale, caption: input.caption });
+  const headlineLines = estimateTextLines(input.headline, Math.max(10, Math.floor(((width * (input.panelWidth / 100)) - input.paddingX * 2) / Math.max(1, input.headlineSize * 0.55))));
+  const captionLines = estimateTextLines(input.caption, Math.max(18, Math.floor(((width * (input.panelWidth / 100)) - input.paddingX * 2) / Math.max(1, captionSize * 0.55))));
+  return { panelY: input.panelY, panelHeight: input.panelHeight, paddingY: input.paddingY, headlineLines, headlineSize: input.headlineSize, captionLines, captionSize, lineHeight: input.lineHeight, showAction: input.showAction } as const;
+}
+
+export function storyCardFlowParity(previewInput: ReturnType<typeof storyCardFlowInput>, exportInput: ReturnType<typeof storyCardFlowInput>) {
+  return {
+    headlineLinesMatch: previewInput.headlineLines === exportInput.headlineLines,
+    captionWrapsAvailable: previewInput.captionLines >= 1 && exportInput.captionLines >= 1,
+    lineHeightMatch: previewInput.lineHeight === exportInput.lineHeight,
+    actionVisibilityMatch: previewInput.showAction === exportInput.showAction,
+    previewFlow: storyCardVerticalFlow({ ...previewInput, captionSize: exportInput.captionSize }),
+    exportFlow: storyCardVerticalFlow(exportInput),
+  } as const;
+}
+
+export function storyCardVerticalFlow(input: { panelY: number; panelHeight: number; paddingY: number; headlineLines: number; headlineSize: number; captionLines: number; captionSize: number; lineHeight: number; showAction: boolean }) {
+  const captionY = input.headlineLines * input.headlineSize * input.lineHeight + input.captionSize * 0.85;
+  const captionHeight = input.captionLines * input.captionSize * (input.lineHeight + 0.25);
+  const captionBottom = captionY + captionHeight;
+  const actionY = input.panelY + input.panelHeight - input.paddingY - (input.showAction ? 42 : 0);
+  return { captionY, captionBottom, actionY, captionToActionGap: actionY - captionBottom, minimumGap: input.showAction ? 24 : 0 } as const;
 }
 
 export function storyPanelAnchor(placement: "top" | "center" | "bottom") {
@@ -132,13 +163,14 @@ export function exportCardRenderPlan(card: { placement: "top" | "center" | "bott
   return { anchor: storyPanelAnchor(card.placement), drawPanel: shouldDrawTextPanel({ treatment: card.textTreatment, textEffect: card.textEffect }) } as const;
 }
 
-export function exportCardConfig(card: { headline: string; caption: string; badge?: string; cta?: string; steps?: string; placement: "top" | "center" | "bottom"; textTreatment: string; textEffect?: string; textScale?: number; textSize: string; textAlign: string; radius: string; gradientStart: string; gradientEnd: string; gradientAngle: number; textColor: string; overlayOpacity: number; panelPaddingX?: number; panelPaddingY?: number; glassOpacity?: number; blurStrength?: number; borderOpacity?: number; shadowStrength?: number; lineHeight?: number; letterSpacing?: number; panelWidth?: number; panelOffsetX?: number; panelOffsetY?: number; badgeColor?: string; ctaColor?: string; roleColor?: string }) {
+export function exportCardConfig(card: { headline: string; caption: string; kicker?: string; badge?: string; cta?: string; steps?: string; placement: "top" | "center" | "bottom"; textTreatment: string; textEffect?: string; textScale?: number; textSize: string; textAlign: string; radius: string; gradientStart: string; gradientEnd: string; gradientAngle: number; textColor: string; overlayOpacity: number; panelPaddingX?: number; panelPaddingY?: number; glassOpacity?: number; blurStrength?: number; borderOpacity?: number; shadowStrength?: number; lineHeight?: number; letterSpacing?: number; panelWidth?: number; panelOffsetX?: number; panelOffsetY?: number; badgeColor?: string; ctaColor?: string; roleColor?: string }) {
   const visual = exportStyleConfig(card); const badgeColor = card.badgeColor ?? "#d7b27b"; const ctaColor = card.ctaColor ?? "#d7b27b"; const roleColor = card.roleColor ?? "#f8f1e8";
   const headlineScale = fitTextScale({ baseScale: visual.textScale, headline: card.headline, caption: card.caption });
   const captionScale = fitCaptionScale({ baseScale: 30, caption: card.caption });
-  const headlineLines = estimateTextLines(card.headline, Math.max(10, Math.floor(((1080 * (visual.panelWidth / 100)) - visual.paddingX * 2) / Math.max(1, headlineScale * 0.55))));
-  const captionLines = estimateTextLines(card.caption, Math.max(18, Math.floor(((1080 * (visual.panelWidth / 100)) - visual.paddingX * 2) / Math.max(1, captionScale * 0.55))));
-  const blockHeight = (card.badge ? 44 : 0) + (card.steps ? 54 : 0) + (card.cta ? 64 : 0);
+  const flowInput = storyCardFlowInput({ headline: card.headline, caption: card.caption, panelWidth: visual.panelWidth, paddingX: visual.paddingX, headlineSize: headlineScale, captionBaseScale: 30, lineHeight: visual.lineHeight, panelY: 0, panelHeight: 0, paddingY: visual.paddingY, showAction: Boolean(card.cta) });
+  const headlineLines = flowInput.headlineLines;
+  const captionLines = flowInput.captionLines;
+  const blockHeight = (card.badge ? 44 : 0) + (card.kicker ? 34 : 0) + (card.steps ? 54 : 0) + (card.cta ? 64 : 0);
   const panelHeight = 150 + visual.paddingY * 2 + headlineLines * headlineScale * visual.lineHeight + captionLines * captionScale * (visual.lineHeight + .25) + 80 + blockHeight;
   const renderPlan = exportCardRenderPlan(card);
   return { headlineScale, captionScale, headlineLines, captionLines, badgeColor, ctaColor, roleColor, panel: safePanelLayout({ canvasWidth: 1080, canvasHeight: 1920, panelWidth: visual.panelWidth, panelHeight, offsetX: visual.offsetX, offsetY: visual.offsetY, placement: card.placement, anchor: renderPlan.anchor }), drawPanel: renderPlan.drawPanel, watermark: exportMetadata().watermark } as const;
