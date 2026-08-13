@@ -1,8 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { canUseSequenceActions, copyableCardStyle, createStoryCards, exportCardConfig, roleForCard, sequenceRoleOrder, exportCardRenderPlan, exportFilename, exportMetadata, exportRenderPlan, exportStyleConfig, fitTextScale, moveCard, safePanelLayout, shouldDrawTextPanel, storyPanelAnchor, sequenceSnapshot, updateCard, visualStyleSnapshot } from "../client/src/lib/storySequence";
+import { canUseSequenceActions, copyableCardStyle, createStoryCards, exportCardConfig, clampPanelDrag, normalizeCardVisibility, roleForCard, sequenceRoleOrder, visualPresetStyle, exportCardRenderPlan, exportFilename, exportMetadata, exportRenderPlan, exportStyleConfig, fitTextScale, moveCard, safePanelLayout, shouldDrawTextPanel, storyPanelAnchor, sequenceSnapshot, updateCard, visualStyleSnapshot } from "../client/src/lib/storySequence";
 
 describe("story sequence utilities", () => {
   const cards = [{ id: "a", headline: "A" }, { id: "b", headline: "B" }, { id: "c", headline: "C" }];
+
+  it("clamps direct canvas drag offsets to the safe editor bounds", () => {
+    expect(clampPanelDrag(30, -100)).toEqual({ offsetX: 8, offsetY: -40 });
+    expect(clampPanelDrag(-4, 18)).toEqual({ offsetX: -4, offsetY: 18 });
+  });
+
+  it("provides distinct luxury, bold, and minimal visual preset contracts", () => {
+    expect(visualPresetStyle("luxury").textTreatment).toBe("blur");
+    expect(visualPresetStyle("bold").fontFamily).toBe("grotesk");
+    expect(visualPresetStyle("minimal").textTreatment).toBe("plain");
+  });
 
   it("maps conversion and launch presets to deterministic narrative roles", () => {
     expect(sequenceRoleOrder("conversion")).toEqual(["hook", "problem", "mechanism", "proof", "cta"]);
@@ -23,6 +34,21 @@ describe("story sequence utilities", () => {
       { id: "b", headline: "Edited" },
       { id: "c", headline: "C" },
     ]);
+  });
+
+  it("normalizes saved cards for the editor reopen path", () => {
+    expect(normalizeCardVisibility({ id: "legacy" })).toMatchObject({ showBadge: true, showCta: true, showRole: true });
+    expect(normalizeCardVisibility({ id: "saved", showBadge: false, showCta: true, showRole: false })).toMatchObject({ showBadge: false, showCta: true, showRole: false });
+  });
+
+  it("preserves element visibility flags in saved sequence snapshots", () => {
+    const snapshot = sequenceSnapshot("Preset test", [{ id: "a", showBadge: false, showCta: true, showRole: false }]);
+    expect(snapshot.cards).toEqual([{ id: "a", showBadge: false, showCta: true, showRole: false }]);
+  });
+
+  it("serializes a visual preset through the shared style contract", () => {
+    const preset = visualPresetStyle("luxury");
+    expect(visualStyleSnapshot(preset as any)).toMatchObject({ fontFamily: "editorial", textTreatment: "blur", textColor: "#f8e7c9", panelPaddingX: 22, panelPaddingY: 20 });
   });
 
   it("normalizes untitled sequence names and preserves card count", () => {
@@ -70,8 +96,17 @@ describe("story sequence utilities", () => {
     const base = { headline: "Hook", caption: "Caption", placement: "bottom", textTreatment: "glass", textEffect: "solid", textScale: 58, textSize: "medium", textAlign: "left", radius: "soft", gradientStart: "#18231f", gradientEnd: "#8da28f", gradientAngle: 180, textColor: "#ffffff", overlayOpacity: 70, panelWidth: 84 } as any;
     const plain = exportCardConfig(base);
     const withBlocks = exportCardConfig({ ...base, badge: "WHY THIS WORKS", steps: "Message → Method → Momentum", cta: "Watch now →" });
+    const hiddenBlocks = exportCardConfig({ ...base, steps: "Message → Method → Momentum" });
     expect(withBlocks.panel.height).toBeGreaterThan(plain.panel.height);
+    expect(hiddenBlocks.panel.height).toBeLessThan(withBlocks.panel.height);
     expect(withBlocks.watermark).toBe(false);
+  });
+
+  it("exports a preset with hidden badge and CTA blocks without a watermark", () => {
+    const preset = visualPresetStyle("luxury");
+    const config = exportCardConfig({ headline: "Luxury story", caption: "A considered moment.", badge: "", cta: "", steps: "", placement: "bottom", ...preset } as any);
+    expect(config.watermark).toBe(false);
+    expect(config.panel.height).toBeLessThan(exportCardConfig({ headline: "Luxury story", caption: "A considered moment.", badge: "THE PROBLEM", cta: "Watch now →", steps: "", placement: "bottom", ...preset } as any).panel.height);
   });
 
   it("keeps exported panels inside the story safe area", () => {

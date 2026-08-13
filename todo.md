@@ -194,3 +194,26 @@
 
 - [x] Add a mocked valid-role generation test proving role and preset reach the AI prompt
 - [x] Capture fresh desktop and mobile verification after role-aware AI wiring
+
+## Canvas controls and visual presets
+
+- [x] Add direct drag-and-drop positioning for the active card’s text panel on the canvas
+- [x] Add one-click Luxury, Bold, and Minimal visual presets with preview/export parity
+- [x] Add independent visibility toggles for badge/eyebrow, CTA button, and card role controls
+- [x] Add tests for drag position bounds, preset serialization, and element visibility behavior
+- [x] Verify the updated editor and exports on desktop and mobile
+
+## Final preset and visibility evidence
+
+- [x] Add tests for persisted showBadge/showCta/showRole state and preset-applied style snapshots
+- [x] Run a fresh preset and visibility-aware export verification pass
+
+## Final live-path evidence follow-up
+
+- [x] Test saved-card normalization and reopen persistence for showBadge/showCta/showRole flags
+- [x] Record a fresh live export verification after applying a visual preset and hiding badge/CTA blocks
+
+## Reopen and export artifact closure
+
+- [x] Add a shared reopen visibility normalizer and test saved-card reload flags through it
+- [x] Produce a live exported PNG after preset and visibility changes and record file-specific findings

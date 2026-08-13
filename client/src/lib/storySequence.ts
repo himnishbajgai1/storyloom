@@ -2,6 +2,24 @@ export type StoryCardLike = { id: string; [key: string]: unknown };
 
 export type StorySequencePreset = "conversion" | "education" | "launch";
 export type StorySequenceRole = "hook" | "problem" | "mechanism" | "proof" | "cta";
+export type VisualPreset = "luxury" | "bold" | "minimal";
+
+export function normalizeCardVisibility<T extends { showBadge?: boolean; showCta?: boolean; showRole?: boolean }>(card: T) {
+  return { ...card, showBadge: card.showBadge ?? true, showCta: card.showCta ?? true, showRole: card.showRole ?? true };
+}
+
+export function clampPanelDrag(offsetX: number, offsetY: number) {
+  return { offsetX: Math.max(-8, Math.min(8, offsetX)), offsetY: Math.max(-40, Math.min(40, offsetY)) };
+}
+
+export function visualPresetStyle(preset: VisualPreset) {
+  const presets = {
+    luxury: { fontFamily: "editorial", textEffect: "solid", textTreatment: "blur", textColor: "#f8e7c9", gradientStart: "#17120f", gradientEnd: "#7a5b3d", gradientAngle: 135, overlayOpacity: 74, textSize: "large", textAlign: "left", radius: "round", panelPaddingX: 22, panelPaddingY: 20, glassOpacity: 28, blurStrength: 24, borderOpacity: 38, shadowStrength: 34, lineHeight: 1, letterSpacing: -0.04, panelWidth: 84 },
+    bold: { fontFamily: "grotesk", textEffect: "solid", textTreatment: "glass", textColor: "#ffffff", gradientStart: "#101b2b", gradientEnd: "#d45c3d", gradientAngle: 180, overlayOpacity: 78, textSize: "large", textAlign: "left", radius: "soft", panelPaddingX: 20, panelPaddingY: 18, glassOpacity: 18, blurStrength: 12, borderOpacity: 46, shadowStrength: 28, lineHeight: 0.95, letterSpacing: -0.06, panelWidth: 88 },
+    minimal: { fontFamily: "modern", textEffect: "solid", textTreatment: "plain", textColor: "#18231f", gradientStart: "#f3eee5", gradientEnd: "#dce8dc", gradientAngle: 180, overlayOpacity: 34, textSize: "medium", textAlign: "left", radius: "soft", panelPaddingX: 16, panelPaddingY: 16, glassOpacity: 10, blurStrength: 0, borderOpacity: 0, shadowStrength: 8, lineHeight: 1.1, letterSpacing: -0.02, panelWidth: 82 },
+  } as const;
+  return presets[preset];
+}
 
 export function sequenceRoleOrder(preset: StorySequencePreset): StorySequenceRole[] {
   return preset === "launch" ? ["hook", "mechanism", "proof", "problem", "cta"] : ["hook", "problem", "mechanism", "proof", "cta"];
